@@ -353,7 +353,7 @@ export const messages: Record<Locale, Record<string, string>> = {
     'dt.importMode': 'Import mode',
     'dt.merge': 'Merge',
     'dt.replace': 'Replace',
-    'dt.import': 'Import backup JSON / bookmarks HTML',
+    'dt.import': 'Import JSON backup / bookmarks',
     'dt.replaceWarn': 'Replace overwrites your current custom sites and favorites. Export a backup first.',
     'dt.msgNoShare': 'Nothing to share yet: add a custom site or favorite some sites first',
     'dt.msgShareCopied': 'Share link copied. Anyone opening it can import the list',
