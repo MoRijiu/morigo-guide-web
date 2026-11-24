@@ -101,5 +101,29 @@ export function useCustomData() {
     if (persist) save()
   }
 
-  return { customCategories, isCustomItem, addItem, updateItem, removeItem }
+  /** 导入自定义分类：merge 按分类名合并、按 url 去重；replace 整表替换。返回导入条数 */
+  function importCategories(incoming: NavCategory[], mode: 'merge' | 'replace'): number {
+    if (mode === 'replace') {
+      customCategories.value = incoming
+      save()
+      return incoming.reduce((s, c) => s + c.items.length, 0)
+    }
+    let count = 0
+    for (const cat of incoming) {
+      const existing = customCategories.value.find((c) => c.name === cat.name)
+      if (existing) {
+        const fresh = cat.items.filter((i) => !existing.items.some((e) => e.url === i.url))
+        existing.items = [...existing.items, ...fresh]
+        count += fresh.length
+      } else if (cat.items.length) {
+        customCategories.value = [...customCategories.value, { ...cat, items: [...cat.items] }]
+        count += cat.items.length
+      }
+    }
+    customCategories.value = [...customCategories.value]
+    save()
+    return count
+  }
+
+  return { customCategories, isCustomItem, addItem, updateItem, removeItem, importCategories }
 }

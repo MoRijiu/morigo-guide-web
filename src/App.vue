@@ -13,6 +13,7 @@ import { APP_VERSION_LABEL } from './version'
 import { useUserData } from './composables/useUserData'
 import { useCustomData } from './composables/useCustomData'
 import SiteFormModal from './components/SiteFormModal.vue'
+import DataTransfer from './components/DataTransfer.vue'
 import type { NavItem, NavCategory } from './types'
 
 const keyword = ref('')
@@ -243,6 +244,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onGlobalKeydown, tru
           <Icon icon="mdi:plus" class="text-sm" />
           添加站点
         </button>
+        <DataTransfer />
       </div>
       <CategoryNav :categories="displayCategories" />
 
