@@ -23,6 +23,9 @@ import { parseShareHash, type SharePayload } from './utils/share'
 import { useThemePrefs } from './composables/useThemePrefs'
 import CommandPalette, { type PaletteEntry } from './components/CommandPalette.vue'
 import { usePwa } from './composables/usePwa'
+import { useI18n } from './i18n'
+
+const { t } = useI18n()
 import { categoryAnchorId } from './utils/slug'
 import { buildBackup, downloadBackup } from './utils/dataTransfer'
 import type { NavItem, NavCategory } from './types'
@@ -126,9 +129,9 @@ function pickItems(urls: string[]): NavItem[] {
 const personalCategories = computed<NavCategory[]>(() => {
   const cats: NavCategory[] = []
   const favItems = pickItems(favorites.value)
-  if (favItems.length) cats.push({ name: '我的收藏', icon: 'mdi:star', items: favItems })
+  if (favItems.length) cats.push({ name: t('cat.favorites'), icon: 'mdi:star', items: favItems })
   const recentItems = pickItems(recent.value)
-  if (recentItems.length) cats.push({ name: '最近访问', icon: 'mdi:history', items: recentItems })
+  if (recentItems.length) cats.push({ name: t('cat.recent'), icon: 'mdi:history', items: recentItems })
   return cats
 })
 
@@ -203,7 +206,7 @@ function onFormSave(payload: { categoryName: string; item: NavItem }) {
 }
 
 function onRemoveItem(payload: { categoryName: string; item: NavItem }) {
-  if (window.confirm(`删除站点「${payload.item.title}」？`)) {
+  if (window.confirm(t('app.deleteConfirm', { name: payload.item.title }))) {
     removeItem(payload.categoryName, payload.item.url)
   }
 }
@@ -299,16 +302,16 @@ const paletteOpen = ref(false)
 
 const paletteEntries = computed<PaletteEntry[]>(() => {
   const actions: PaletteEntry[] = [
-    { kind: 'action', id: 'action:theme', title: '切换深色 / 浅色模式', icon: 'mdi:theme-light-dark', actionId: 'toggle-theme' },
-    { kind: 'action', id: 'action:add', title: '添加自定义站点', icon: 'mdi:plus', actionId: 'add-site' },
-    { kind: 'action', id: 'action:export', title: '导出备份 JSON', hint: '自定义站点 + 收藏 + 最近访问', icon: 'mdi:download', actionId: 'export-backup' },
-    { kind: 'action', id: 'action:top', title: '回到顶部', icon: 'mdi:arrow-up', actionId: 'back-to-top' },
-    { kind: 'action', id: 'action:view', title: '切换网格 / 列表视图', icon: 'mdi:view-grid-outline', actionId: 'toggle-view' },
-    { kind: 'action', id: 'action:accent', title: '切换强调色', hint: '紫罗兰 / 湖蓝 / 晴空 / 翠绿 / 琥珀 / 玫红', icon: 'mdi:palette-outline', actionId: 'cycle-accent' },
-    { kind: 'action', id: 'action:stats', title: '查看访问统计', hint: '本地访问 Top 与分类占比', icon: 'mdi:chart-bar', actionId: 'open-stats' },
-    { kind: 'action', id: 'action:share', title: '生成分享链接', hint: '把自定义站点与收藏打包进链接', icon: 'mdi:share-variant', actionId: 'open-share' },
+    { kind: 'action', id: 'action:theme', title: t('action.toggleTheme'), icon: 'mdi:theme-light-dark', actionId: 'toggle-theme' },
+    { kind: 'action', id: 'action:add', title: t('action.addSite'), icon: 'mdi:plus', actionId: 'add-site' },
+    { kind: 'action', id: 'action:export', title: t('action.export'), hint: t('action.exportHint'), icon: 'mdi:download', actionId: 'export-backup' },
+    { kind: 'action', id: 'action:top', title: t('action.top'), icon: 'mdi:arrow-up', actionId: 'back-to-top' },
+    { kind: 'action', id: 'action:view', title: t('action.view'), icon: 'mdi:view-grid-outline', actionId: 'toggle-view' },
+    { kind: 'action', id: 'action:accent', title: t('action.accent'), hint: t('action.accentHint'), icon: 'mdi:palette-outline', actionId: 'cycle-accent' },
+    { kind: 'action', id: 'action:stats', title: t('action.stats'), hint: t('action.statsHint'), icon: 'mdi:chart-bar', actionId: 'open-stats' },
+    { kind: 'action', id: 'action:share', title: t('action.share'), hint: t('action.shareHint'), icon: 'mdi:share-variant', actionId: 'open-share' },
     ...(canInstall.value
-      ? [{ kind: 'action', id: 'action:install', title: '安装应用（PWA）', hint: '装到桌面/主屏幕，离线可用', icon: 'mdi:download', actionId: 'install-app' } as PaletteEntry]
+      ? [{ kind: 'action', id: 'action:install', title: t('action.install'), hint: t('action.installHint'), icon: 'mdi:download', actionId: 'install-app' } as PaletteEntry]
       : []),
   ]
   const sites: PaletteEntry[] = []
@@ -333,8 +336,8 @@ const paletteEntries = computed<PaletteEntry[]>(() => {
   const categories: PaletteEntry[] = displayCategories.value.map((cat) => ({
     kind: 'category',
     id: `cat:${cat.name}`,
-    title: `跳到「${cat.name}」`,
-    hint: `${cat.items.length} 个站点`,
+    title: t('palette.jumpTo', { name: cat.name }),
+    hint: t('palette.sitesCount', { n: cat.items.length }),
     icon: cat.icon,
     categoryName: cat.name,
   }))
@@ -412,7 +415,7 @@ onBeforeUnmount(() => {
     <a
       href="#main-content"
       class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[60] focus:px-3 focus:py-1.5 focus:rounded-md focus:bg-accent-600 focus:text-white focus:text-xs"
-    >跳到导航内容</a>
+    >{{ t('app.skip') }}</a>
     <NavHeader />
 
     <div class="pt-9 pb-6 px-5 text-center">
@@ -420,20 +423,20 @@ onBeforeUnmount(() => {
         <DynamicIcon :icon="siteConfig.logoIcon" class="text-accent-500 dark:text-accent-400" />
         {{ siteConfig.title }}<span class="text-accent-600 dark:text-accent-400">{{ siteConfig.titleHighlight }}</span>
       </h2>
-      <p class="text-surface-400 dark:text-surface-500 text-xs mb-5">{{ siteConfig.tagline }} · 共 {{ totalCount }} 个站点</p>
+      <p class="text-surface-400 dark:text-surface-500 text-xs mb-5">{{ t('app.tagline') }} · {{ t('app.sitesCount', { n: totalCount }) }}</p>
       <SearchBar v-if="siteConfig.search.enabled" ref="searchBarRef" :items="allItems" :hot-terms="hotTerms" @search="onSearch" @open-item="onOpenItem" />
     </div>
 
     <main id="main-content" class="flex-1 max-w-6xl w-full mx-auto px-5 sm:px-8 pb-14">
       <div v-if="!trimmedKeyword" class="flex flex-wrap items-center justify-end gap-x-3 gap-y-2 mb-3 -mt-1">
-        <span class="hidden sm:inline text-[11px] text-surface-300 dark:text-surface-600">自定义站点保存在本机浏览器</span>
+        <span class="hidden sm:inline text-[11px] text-surface-300 dark:text-surface-600">{{ t('app.customHint') }}</span>
         <button
           type="button"
           class="flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium border border-surface-200 dark:border-surface-700 text-surface-600 dark:text-surface-300 hover:border-accent-400 hover:text-accent-600 dark:hover:text-accent-400 transition-colors"
           @click="paletteOpen = true"
         >
           <Icon icon="mdi:apple-keyboard-command" class="text-sm" />
-          命令面板
+          {{ t('toolbar.commandPalette') }}
           <kbd class="kbd-hint hidden md:inline">⌘K</kbd>
         </button>
         <button
@@ -442,7 +445,7 @@ onBeforeUnmount(() => {
           @click="openAddForm"
         >
           <Icon icon="mdi:plus" class="text-sm" />
-          添加站点
+          {{ t('toolbar.addSite') }}
         </button>
         <button
           v-if="canInstall"
@@ -451,17 +454,17 @@ onBeforeUnmount(() => {
           @click="promptInstall"
         >
           <Icon icon="mdi:download" class="text-sm" />
-          安装应用
+          {{ t('toolbar.installApp') }}
         </button>
         <DataTransfer />
         <ThemePanel />
         <StatsPanel :items="allItems" :categories="mergedCategories" :favorites-count="favorites.length" @open-item="onOpenItem" />
         <span class="hidden sm:block w-px h-4 bg-surface-200 dark:bg-surface-700" aria-hidden="true" />
-        <div class="flex items-center rounded-md border border-surface-200 dark:border-surface-700 overflow-hidden" role="group" aria-label="视图切换">
+        <div class="flex items-center rounded-md border border-surface-200 dark:border-surface-700 overflow-hidden" role="group" :aria-label="t('view.group')">
           <button
             type="button"
-            title="网格视图"
-            aria-label="网格视图"
+            :title="t('view.grid')"
+            :aria-label="t('view.grid')"
             :aria-pressed="view === 'grid'"
             :class="['p-1.5 transition-colors', view === 'grid' ? 'bg-accent-50 dark:bg-accent-500/15 text-accent-600 dark:text-accent-400' : 'text-surface-400 dark:text-surface-500 hover:text-surface-600 dark:hover:text-surface-300']"
             @click="setView('grid')"
@@ -470,8 +473,8 @@ onBeforeUnmount(() => {
           </button>
           <button
             type="button"
-            title="列表视图"
-            aria-label="列表视图"
+            :title="t('view.list')"
+            :aria-label="t('view.list')"
             :aria-pressed="view === 'list'"
             :class="['p-1.5 transition-colors', view === 'list' ? 'bg-accent-50 dark:bg-accent-500/15 text-accent-600 dark:text-accent-400' : 'text-surface-400 dark:text-surface-500 hover:text-surface-600 dark:hover:text-surface-300']"
             @click="setView('list')"
@@ -479,11 +482,11 @@ onBeforeUnmount(() => {
             <Icon icon="mdi:view-list-outline" class="text-sm block" />
           </button>
         </div>
-        <div class="flex items-center rounded-md border border-surface-200 dark:border-surface-700 overflow-hidden" role="group" aria-label="密度切换">
+        <div class="flex items-center rounded-md border border-surface-200 dark:border-surface-700 overflow-hidden" role="group" :aria-label="t('density.group')">
           <button
             type="button"
-            title="舒适密度"
-            aria-label="舒适密度"
+            :title="t('density.comfortable')"
+            :aria-label="t('density.comfortable')"
             :aria-pressed="density === 'comfortable'"
             :class="['p-1.5 transition-colors', density === 'comfortable' ? 'bg-accent-50 dark:bg-accent-500/15 text-accent-600 dark:text-accent-400' : 'text-surface-400 dark:text-surface-500 hover:text-surface-600 dark:hover:text-surface-300']"
             @click="setDensity('comfortable')"
@@ -492,8 +495,8 @@ onBeforeUnmount(() => {
           </button>
           <button
             type="button"
-            title="紧凑密度"
-            aria-label="紧凑密度"
+            :title="t('density.compact')"
+            :aria-label="t('density.compact')"
             :aria-pressed="density === 'compact'"
             :class="['p-1.5 transition-colors', density === 'compact' ? 'bg-accent-50 dark:bg-accent-500/15 text-accent-600 dark:text-accent-400' : 'text-surface-400 dark:text-surface-500 hover:text-surface-600 dark:hover:text-surface-300']"
             @click="setDensity('compact')"
@@ -506,14 +509,14 @@ onBeforeUnmount(() => {
           class="hidden md:flex items-center gap-1 px-2 py-1.5 rounded-md text-xs text-surface-400 dark:text-surface-500 hover:text-accent-600 dark:hover:text-accent-400 transition-colors"
           @click="toggleAllCollapsed"
         >
-          {{ allCollapsed ? '展开全部' : '折叠全部' }}
+          {{ allCollapsed ? t('toolbar.expandAll') : t('toolbar.collapseAll') }}
         </button>
       </div>
       <CategoryNav :categories="displayCategories" />
 
       <p v-if="trimmedKeyword && filteredCategories.length" class="text-xs text-surface-400 dark:text-surface-500 mb-5 flex items-center justify-between gap-3">
-        <span>找到 <span class="text-accent-600 dark:text-accent-400 font-medium">{{ resultCount }}</span> 个与「{{ trimmedKeyword }}」相关的导航</span>
-        <span class="hidden md:inline text-surface-300 dark:text-surface-600">↑↓ 选择 · Enter 打开</span>
+        <span>{{ t('search.found', { n: resultCount, q: trimmedKeyword }) }}</span>
+        <span class="hidden md:inline text-surface-300 dark:text-surface-600">{{ t('search.kbdHint') }}</span>
       </p>
 
       <template v-if="displayCategories.length">
@@ -522,7 +525,7 @@ onBeforeUnmount(() => {
           :key="category.name"
           :category="category"
           :keyword="trimmedKeyword"
-          :clear-label="!trimmedKeyword && category.name === '最近访问' ? '清空' : undefined"
+          :clear-label="!trimmedKeyword && category.name === t('cat.recent') ? t('common.clear') : undefined"
           :active-key="activeKey"
           :view-mode="view"
           :density="density"
@@ -538,9 +541,9 @@ onBeforeUnmount(() => {
         <div class="text-center mb-8">
           <Icon icon="mdi:compass-off-outline" class="text-4xl text-surface-300 dark:text-surface-600 mb-3" />
           <p class="text-sm text-surface-500 dark:text-surface-400">
-            站内没有找到「<span class="font-medium text-surface-700 dark:text-surface-200">{{ trimmedKeyword }}</span>」
+            {{ t('empty.title', { q: trimmedKeyword }) }}
           </p>
-          <p class="text-xs text-surface-400 dark:text-surface-500 mt-1.5">试试更短的词或别名（比如「b站」「谷歌」），或者直接去外部搜：</p>
+          <p class="text-xs text-surface-400 dark:text-surface-500 mt-1.5">{{ t('empty.hint') }}</p>
           <div class="flex items-center justify-center gap-2 mt-4">
             <a
               v-for="engine in externalEngines"
@@ -551,7 +554,7 @@ onBeforeUnmount(() => {
               class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium border border-surface-200 dark:border-surface-700 text-surface-600 dark:text-surface-300 hover:border-accent-400 hover:text-accent-600 dark:hover:text-accent-400 transition-colors"
             >
               <DynamicIcon :icon="engine.icon" class="text-sm" />
-              用{{ engine.label }}搜
+              {{ t('empty.searchWith', { name: engine.label }) }}
             </a>
           </div>
         </div>
@@ -559,7 +562,7 @@ onBeforeUnmount(() => {
         <div v-if="hotItems.length">
           <p class="text-xs font-medium text-surface-400 dark:text-surface-500 mb-3 flex items-center gap-1.5">
             <Icon icon="mdi:fire" class="text-sm text-accent-500" />
-            热门推荐
+            {{ t('empty.hot') }}
           </p>
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
             <NavCard v-for="(item, idx) in hotItems" :key="item.url" :item="item" :index="idx" />
@@ -572,14 +575,14 @@ onBeforeUnmount(() => {
       <div class="max-w-6xl mx-auto px-5 sm:px-8 flex flex-col sm:flex-row items-center gap-2 sm:gap-3 text-[11px] text-surface-300 dark:text-surface-600">
         <span class="flex items-center gap-1">
           <DynamicIcon :icon="siteConfig.logoIcon" class="text-xs text-accent-500/50" />
-          &copy; {{ new Date().getFullYear() }} {{ siteConfig.title }}{{ siteConfig.titleHighlight }} · {{ siteConfig.tagline }}
+          &copy; {{ new Date().getFullYear() }} {{ siteConfig.title }}{{ siteConfig.titleHighlight }} · {{ t('app.tagline') }}
         </span>
-        <span class="hidden lg:flex items-center gap-2 sm:mx-auto" aria-label="键盘快捷键">
-          <span><kbd class="kbd-hint">⌘K</kbd> 命令面板</span>
-          <span><kbd class="kbd-hint">/</kbd> 搜索</span>
-          <span><kbd class="kbd-hint">↑</kbd><kbd class="kbd-hint">↓</kbd> 选择</span>
-          <span><kbd class="kbd-hint">Enter</kbd> 打开</span>
-          <span><kbd class="kbd-hint">Esc</kbd> 清空</span>
+        <span class="hidden lg:flex items-center gap-2 sm:mx-auto" :aria-label="t('footer.select')">
+          <span><kbd class="kbd-hint">⌘K</kbd> {{ t('toolbar.commandPalette') }}</span>
+          <span><kbd class="kbd-hint">/</kbd> {{ t('footer.search') }}</span>
+          <span><kbd class="kbd-hint">↑</kbd><kbd class="kbd-hint">↓</kbd> {{ t('footer.select') }}</span>
+          <span><kbd class="kbd-hint">Enter</kbd> {{ t('footer.open') }}</span>
+          <span><kbd class="kbd-hint">Esc</kbd> {{ t('footer.clear') }}</span>
         </span>
         <span class="flex items-center gap-3 sm:ml-auto lg:ml-0">
           <span>{{ APP_VERSION_LABEL }}</span>
@@ -590,7 +593,7 @@ onBeforeUnmount(() => {
             target="_blank"
             rel="noopener noreferrer"
             class="hover:text-surface-500 dark:hover:text-surface-400 transition-colors"
-            aria-label="GitHub 仓库"
+            :aria-label="t('footer.github')"
           >
             <Icon icon="mdi:github" class="text-sm" />
           </a>
@@ -604,7 +607,7 @@ onBeforeUnmount(() => {
       class="fixed bottom-4 left-4 z-50 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-surface-800/90 dark:bg-surface-100/90 text-white dark:text-surface-900 shadow-lg backdrop-blur"
     >
       <span class="w-1.5 h-1.5 rounded-full bg-amber-400" aria-hidden="true" />
-      当前离线 · 已缓存内容可继续浏览
+      {{ t('app.offline') }}
     </div>
 
     <BackToTop />

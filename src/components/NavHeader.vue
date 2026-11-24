@@ -3,6 +3,9 @@ import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { Icon } from '@iconify/vue'
 import DynamicIcon from './DynamicIcon.vue'
 import siteConfig from '../config/site'
+import { useI18n } from '../i18n'
+
+const { locale, toggleLocale, t } = useI18n()
 
 const isDark = ref(false)
 
@@ -51,17 +54,26 @@ if (typeof window !== 'undefined') {
           rel="noopener noreferrer"
           class="w-8 h-8 rounded-md flex items-center justify-center text-surface-400 hover:text-surface-600 dark:hover:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors"
           title="GitHub"
-          aria-label="GitHub 仓库"
+          :aria-label="t('header.github')"
         >
           <Icon icon="mdi:github" class="text-lg" />
         </a>
         <button
           @click="toggleDark"
           class="w-8 h-8 rounded-md flex items-center justify-center text-surface-400 hover:text-surface-600 dark:hover:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors"
-          :title="isDark ? '浅色模式' : '深色模式'"
-          :aria-label="isDark ? '切换到浅色模式' : '切换到深色模式'"
+          :title="isDark ? t('header.light') : t('header.dark')"
+          :aria-label="isDark ? t('header.toLight') : t('header.toDark')"
         >
           <Icon :icon="isDark ? 'mdi:white-balance-sunny' : 'mdi:moon-waning-crescent'" class="text-lg" />
+        </button>
+        <button
+          @click="toggleLocale"
+          class="h-8 px-2 rounded-md flex items-center gap-1 text-surface-400 hover:text-surface-600 dark:hover:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors"
+          :title="t('header.langTitle')"
+          :aria-label="t('header.langTitle')"
+        >
+          <Icon icon="mdi:translate" class="text-base" />
+          <span class="text-[11px] font-medium">{{ locale === 'zh' ? 'EN' : '中文' }}</span>
         </button>
       </div>
     </div>

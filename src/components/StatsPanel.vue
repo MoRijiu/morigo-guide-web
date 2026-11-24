@@ -3,6 +3,9 @@ import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useUserData } from '../composables/useUserData'
 import type { NavItem, NavCategory } from '../types'
+import { useI18n } from '../i18n'
+
+const { t } = useI18n()
 
 /**
  * 本地访问统计面板：数据全部来自 localStorage 的访问计数，
@@ -56,7 +59,7 @@ const categoryStats = computed(() => {
 })
 
 function onClear() {
-  if (window.confirm('清空全部访问统计与最近访问记录？收藏不受影响。')) {
+  if (window.confirm(t('stats.confirm'))) {
     clearStats()
   }
 }
@@ -97,37 +100,37 @@ onBeforeUnmount(() => {
       @click="open = !open"
     >
       <Icon icon="mdi:chart-bar" class="text-sm" />
-      统计
+      {{ t('stats.button') }}
     </button>
 
     <div
       v-if="open"
       class="absolute right-0 top-full mt-1.5 z-50 w-72 max-w-[calc(100vw-2.5rem)] rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-900 shadow-lg p-3 text-left"
       role="group"
-      aria-label="本地访问统计"
+      :aria-label="t('stats.aria')"
     >
       <div class="flex items-baseline justify-between px-1 mb-2">
-        <p class="text-[11px] font-medium text-surface-400 dark:text-surface-500">本地访问统计</p>
-        <p class="text-[11px] text-surface-300 dark:text-surface-600">仅存本机 · 不上报</p>
+        <p class="text-[11px] font-medium text-surface-400 dark:text-surface-500">{{ t('stats.title') }}</p>
+        <p class="text-[11px] text-surface-300 dark:text-surface-600">{{ t('stats.localNote') }}</p>
       </div>
 
       <div class="grid grid-cols-3 gap-1.5 mb-3 text-center">
         <div class="rounded-md bg-surface-50 dark:bg-surface-800/60 py-1.5">
           <p class="text-sm font-semibold text-surface-800 dark:text-surface-100">{{ totalVisits }}</p>
-          <p class="text-[10px] text-surface-400 dark:text-surface-500">总访问次</p>
+          <p class="text-[10px] text-surface-400 dark:text-surface-500">{{ t('stats.total') }}</p>
         </div>
         <div class="rounded-md bg-surface-50 dark:bg-surface-800/60 py-1.5">
           <p class="text-sm font-semibold text-surface-800 dark:text-surface-100">{{ visitedCount }}</p>
-          <p class="text-[10px] text-surface-400 dark:text-surface-500">访问过站点</p>
+          <p class="text-[10px] text-surface-400 dark:text-surface-500">{{ t('stats.visited') }}</p>
         </div>
         <div class="rounded-md bg-surface-50 dark:bg-surface-800/60 py-1.5">
           <p class="text-sm font-semibold text-surface-800 dark:text-surface-100">{{ favoritesCount }}</p>
-          <p class="text-[10px] text-surface-400 dark:text-surface-500">我的收藏</p>
+          <p class="text-[10px] text-surface-400 dark:text-surface-500">{{ t('cat.favorites') }}</p>
         </div>
       </div>
 
       <template v-if="totalVisits > 0">
-        <p class="px-1 text-[11px] font-medium text-surface-400 dark:text-surface-500 mb-1.5">访问 Top</p>
+        <p class="px-1 text-[11px] font-medium text-surface-400 dark:text-surface-500 mb-1.5">{{ t('stats.top') }}</p>
         <ul class="mb-3">
           <li v-for="(row, idx) in topItems" :key="row.item.url">
             <button
@@ -146,12 +149,12 @@ onBeforeUnmount(() => {
                   />
                 </span>
               </span>
-              <span class="shrink-0 text-[11px] font-medium text-surface-500 dark:text-surface-400">{{ row.count }} 次</span>
+              <span class="shrink-0 text-[11px] font-medium text-surface-500 dark:text-surface-400">{{ t('stats.times', { n: row.count }) }}</span>
             </button>
           </li>
         </ul>
 
-        <p class="px-1 text-[11px] font-medium text-surface-400 dark:text-surface-500 mb-1.5">分类访问占比</p>
+        <p class="px-1 text-[11px] font-medium text-surface-400 dark:text-surface-500 mb-1.5">{{ t('stats.byCategory') }}</p>
         <ul class="mb-3 space-y-1.5 px-1">
           <li v-for="row in categoryStats" :key="row.name" class="flex items-center gap-2">
             <span class="w-16 shrink-0 truncate text-[11px] text-surface-600 dark:text-surface-300">{{ row.name }}</span>
@@ -168,13 +171,13 @@ onBeforeUnmount(() => {
             class="text-[11px] text-surface-400 dark:text-surface-500 hover:text-red-500 dark:hover:text-red-400 transition-colors"
             @click="onClear"
           >
-            清空统计
+            {{ t('stats.clear') }}
           </button>
         </div>
       </template>
 
       <p v-else class="px-1 py-2 text-xs leading-relaxed text-surface-400 dark:text-surface-500">
-        还没有访问记录。点开任意站点后，这里会生成你的访问 Top 与分类占比，数据只保存在这台设备的浏览器里。
+        {{ t('stats.empty') }}
       </p>
     </div>
   </div>
