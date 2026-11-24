@@ -27,7 +27,7 @@ const UA =
 
 /** 从 navigation.ts 按源码顺序解析分类与条目（文件格式固定：分类 name+icon、条目 title+url）。 */
 function parseNavigation(source) {
-  const catRe = /\{\s*\n\s*name: '([^']+)',\s*\n\s*icon:/g
+  const catRe = /\{\s*\n\s*name: '([^']+)',(?:[^\n]*\n){1,3}?\s*icon:/g
   const cats = []
   let m
   while ((m = catRe.exec(source)) !== null) {
