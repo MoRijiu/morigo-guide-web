@@ -45,6 +45,7 @@ if (typeof window !== 'undefined') {
           rel="noopener noreferrer"
           class="w-8 h-8 rounded-md flex items-center justify-center text-surface-400 hover:text-surface-600 dark:hover:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors"
           title="GitHub"
+          aria-label="GitHub 仓库"
         >
           <Icon icon="mdi:github" class="text-lg" />
         </a>
@@ -52,6 +53,7 @@ if (typeof window !== 'undefined') {
           @click="toggleDark"
           class="w-8 h-8 rounded-md flex items-center justify-center text-surface-400 hover:text-surface-600 dark:hover:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors"
           :title="isDark ? '浅色模式' : '深色模式'"
+          :aria-label="isDark ? '切换到浅色模式' : '切换到深色模式'"
         >
           <Icon :icon="isDark ? 'mdi:white-balance-sunny' : 'mdi:moon-waning-crescent'" class="text-lg" />
         </button>
