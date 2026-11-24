@@ -1,12 +1,60 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useWidgets, daysUntil } from '../composables/useWidgets'
+import { useWeather } from '../composables/useWeather'
+import { WEATHER_CITIES, weatherCondition } from '../utils/weather'
 import { QUOTES, dailyQuoteIndex } from '../utils/quotes'
 import { useI18n } from '../i18n'
 
 const { t, locale } = useI18n()
-const { enabled, countdown, setCountdown } = useWidgets()
+const { enabled, countdown, setCountdown, weatherCity } = useWidgets()
+
+const visibleCount = computed(
+  () =>
+    Number(enabled.value.clock) +
+    Number(enabled.value.quote) +
+    Number(enabled.value.countdown) +
+    Number(enabled.value.weather)
+)
+const gridClass = computed(() => {
+  if (visibleCount.value >= 4) return 'sm:grid-cols-2 lg:grid-cols-4'
+  if (visibleCount.value === 3) return 'sm:grid-cols-3'
+  if (visibleCount.value === 2) return 'sm:grid-cols-2'
+  return ''
+})
+
+// ==================== 天气 ====================
+const weather = useWeather()
+const weatherData = weather.data
+const condition = computed(() =>
+  weatherData.value ? weatherCondition(weatherData.value.code) : null
+)
+const weatherIcon = computed(() => {
+  if (!condition.value || !weatherData.value) return 'mdi:weather-cloudy'
+  return weatherData.value.isDay ? condition.value.iconDay : condition.value.iconNight
+})
+const conditionText = computed(() => {
+  if (!condition.value) return ''
+  return locale.value === 'zh' ? condition.value.zh : condition.value.en
+})
+const cityName = computed(() => {
+  if (weatherCity.value.id === 'geo') return t('widget.weather.myLocation')
+  const c = WEATHER_CITIES.find((x) => x.id === weatherCity.value.id)
+  if (!c) return t('widget.weather.myLocation')
+  return locale.value === 'zh' ? c.zh : c.en
+})
+
+function loadWeather(force = false) {
+  if (enabled.value.weather) {
+    void weather.load(weatherCity.value.lat, weatherCity.value.lon, force)
+  }
+}
+watch(
+  () => [enabled.value.weather, weatherCity.value.id, weatherCity.value.lat, weatherCity.value.lon],
+  () => loadWeather()
+)
+onMounted(loadWeather)
 
 // ==================== 时钟 ====================
 const now = ref(new Date())
@@ -73,7 +121,7 @@ const countdownLabel = computed(() => countdown.value.label || t('widget.newYear
 </script>
 
 <template>
-  <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mb-4" role="region" :aria-label="t('widget.region')">
+  <div class="grid grid-cols-1 gap-2.5 mb-4" :class="gridClass" role="region" :aria-label="t('widget.region')">
     <!-- 时钟 -->
     <div
       v-if="enabled.clock"
@@ -90,7 +138,6 @@ const countdownLabel = computed(() => countdown.value.label || t('widget.newYear
     <div
       v-if="enabled.quote"
       class="widget-card flex items-center gap-3 rounded-lg border border-surface-200/80 dark:border-surface-700/60 bg-white dark:bg-surface-900 px-3.5 py-3"
-      :class="enabled.clock && enabled.countdown ? '' : 'sm:col-span-2'"
     >
       <Icon icon="mdi:format-quote-close" class="text-xl text-accent-500 shrink-0" />
       <div class="min-w-0 flex-1">
@@ -160,6 +207,42 @@ const countdownLabel = computed(() => countdown.value.label || t('widget.newYear
         @click="saveEdit"
       >
         <Icon icon="mdi:check" class="text-sm block" />
+      </button>
+    </div>
+
+    <!-- 天气 -->
+    <div
+      v-if="enabled.weather"
+      class="widget-card flex items-center gap-3 rounded-lg border border-surface-200/80 dark:border-surface-700/60 bg-white dark:bg-surface-900 px-3.5 py-3"
+    >
+      <Icon :icon="weatherIcon" class="text-2xl text-accent-500 shrink-0" />
+      <div class="min-w-0 flex-1">
+        <template v-if="weatherData">
+          <p class="text-lg leading-tight font-semibold text-surface-800 dark:text-surface-100">
+            {{ weatherData.temp }}°C
+            <span class="text-xs font-normal text-surface-500 dark:text-surface-400 ml-1">{{ conditionText }}</span>
+          </p>
+          <p class="text-[11px] text-surface-400 dark:text-surface-500 truncate">
+            {{ cityName }} · {{ weatherData.low }}° / {{ weatherData.high }}° ·
+            {{ t('widget.weather.feels') }} {{ weatherData.feels }}° ·
+            {{ t('widget.weather.humidity') }} {{ weatherData.humidity }}% ·
+            {{ t('widget.weather.wind') }} {{ weatherData.wind }} km/h
+          </p>
+        </template>
+        <p v-else-if="weather.error.value" class="text-xs text-surface-500 dark:text-surface-400">
+          {{ t('widget.weather.error') }}
+        </p>
+        <p v-else class="text-xs text-surface-400 dark:text-surface-500">{{ t('widget.weather.loading') }}</p>
+      </div>
+      <button
+        type="button"
+        class="shrink-0 p-1.5 rounded-md text-surface-400 dark:text-surface-500 hover:text-accent-600 dark:hover:text-accent-400 transition-colors"
+        :class="weather.loading.value ? 'animate-spin' : ''"
+        :title="t('widget.weather.refresh')"
+        :aria-label="t('widget.weather.refresh')"
+        @click="loadWeather(true)"
+      >
+        <Icon icon="mdi:refresh" class="text-sm block" />
       </button>
     </div>
   </div>
