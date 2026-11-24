@@ -33,12 +33,13 @@ MoriGo 是一个开源、可自部署的网址导航站（生产：go.morijiu.cn
 | R5 | 友好性 | 键盘流（`/` 聚焦、Esc 清空、方向键 + 回车打开）、空状态文案、无障碍（aria、focus 可见） |
 | R6 | 数据与打磨 | 「我的产品」分类置顶（博客 / 通行证 / 无敌刷题 / 墨记 / tools 等）、SEO/meta/OG、favicon、构建体积检查 |
 | R8 | 开源化 | 默认数据移除私人产品，改为 `navigation.local.ts` 本地覆盖机制（仓库只留 `.example` 示例），README 说明自部署清单 |
+| R10 | 自定义站点 | 访客在页面增删改自己的导航项与分类（localStorage 持久化），同名分类并入默认分类、新分类置顶展示；与构建期 `navigation.local.ts` 覆盖互补 |
 | R9 | 字体自托管 | Inter / Space Grotesk 改 @fontsource 本地 woff2（latin 子集、font-display: swap），移除 Google Fonts 运行时外链；meta 文案改开源通用口径 |
 
 ### 2.3 非目标
 
 - 不做账号系统、不做云端同步（本地存储足够）。
-- 不做导航项的在线编辑后台（数据改代码走 PR）。
+- 不做服务端编辑后台；访客的自定义站点只存本机浏览器（R10），默认数据仍改代码走 PR。
 - 不接统计/追踪脚本。
 
 ## 3. 环境与发布
