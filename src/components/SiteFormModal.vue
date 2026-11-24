@@ -4,8 +4,15 @@ import { Icon } from '@iconify/vue'
 import { normalizeUrl } from '../composables/useCustomData'
 import type { NavItem } from '../types'
 import { useI18n } from '../i18n'
+import siteConfig from '../config/site'
 
-const { t } = useI18n()
+const { t, catName } = useI18n()
+
+/** 下拉展示名：默认分类按语言显示本地化名（value 仍用原名作身份标识），自定义分类原样 */
+function categoryLabel(name: string): string {
+  const def = siteConfig.navigation.find((c) => c.name === name)
+  return def ? catName(def) : name
+}
 
 const props = defineProps<{
   open: boolean
@@ -152,7 +159,7 @@ function onSubmit() {
             v-model="categoryChoice"
             class="mt-1 w-full px-2 py-2 text-sm rounded-lg border border-surface-200 dark:border-surface-700 bg-transparent text-surface-800 dark:text-surface-100 outline-none focus:border-accent-400 dark:bg-surface-900"
           >
-            <option v-for="name in categoryNames" :key="name" :value="name">{{ name }}</option>
+            <option v-for="name in categoryNames" :key="name" :value="name">{{ categoryLabel(name) }}</option>
             <option :value="NEW_CATEGORY">{{ t('form.newCategory') }}</option>
           </select>
         </label>

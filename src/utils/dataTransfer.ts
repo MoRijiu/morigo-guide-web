@@ -1,5 +1,6 @@
 import type { NavCategory } from '../types'
 import { normalizeUrl } from '../composables/useCustomData'
+import { t } from '../i18n'
 
 /** MoriGo 备份文件格式（JSON 导出/导入共用） */
 export interface MorigoBackup {
@@ -55,6 +56,9 @@ export function sanitizeCategories(input: unknown): NavCategory[] {
       items.push({
         title: i.title.trim().slice(0, 80) || url,
         description: typeof i.description === 'string' ? i.description.slice(0, 200) : '',
+        ...(typeof i.descriptionEn === 'string' && i.descriptionEn
+          ? { descriptionEn: i.descriptionEn.slice(0, 200) }
+          : {}),
         url,
         icon: typeof i.icon === 'string' && i.icon ? i.icon : 'mdi:web',
         ...(Array.isArray(i.aliases)
@@ -65,6 +69,9 @@ export function sanitizeCategories(input: unknown): NavCategory[] {
     if (items.length) {
       out.push({
         name: cat.name.trim().slice(0, 40),
+        ...(typeof cat.nameEn === 'string' && cat.nameEn
+          ? { nameEn: cat.nameEn.trim().slice(0, 40) }
+          : {}),
         icon: typeof cat.icon === 'string' && cat.icon ? cat.icon : 'mdi:folder-outline',
         items,
       })
@@ -94,11 +101,11 @@ export function parseBackup(text: string): MorigoBackup {
   try {
     parsed = JSON.parse(text)
   } catch {
-    throw new Error('文件不是有效的 JSON')
+    throw new Error(t('dt.errInvalidJson'))
   }
-  if (!parsed || typeof parsed !== 'object') throw new Error('备份文件格式不正确')
+  if (!parsed || typeof parsed !== 'object') throw new Error(t('dt.errBadFormat'))
   const b = parsed as Record<string, unknown>
-  if (b.app !== 'morigo') throw new Error('这不是 MoriGo 的备份文件')
+  if (b.app !== 'morigo') throw new Error(t('dt.errNotMorigo'))
   return {
     app: 'morigo',
     version: 1,
@@ -116,14 +123,14 @@ export function parseBackup(text: string): MorigoBackup {
 export function parseBookmarks(html: string): NavCategory[] {
   const doc = new DOMParser().parseFromString(html, 'text/html')
   const anchors = Array.from(doc.querySelectorAll('a[href]'))
-  if (!anchors.length) throw new Error('书签文件里没有找到任何链接')
+  if (!anchors.length) throw new Error(t('dt.errNoLinks'))
 
   const byFolder = new Map<string, NavCategory['items']>()
   for (const a of anchors) {
     const url = normalizeUrl(a.getAttribute('href') ?? '')
     if (!url) continue
     // 书签结构：<DT><H3>文件夹</H3><DL>…<DT><A>…</A>，向上找最近的 DL 的前置 H3
-    let folder = '导入的书签'
+    let folder = t('dt.importedBookmarks')
     let node: Element | null = a
     while (node) {
       const dl: Element | null = node.closest('dl')

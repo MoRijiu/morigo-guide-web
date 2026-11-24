@@ -4,7 +4,9 @@ import { ref } from 'vue'
  * 国际化（中/英双语）：UI 文案字典 + 语言状态单例。
  * - 语言存 localStorage `morigo:locale`；首次访问按浏览器语言猜测（en* → en，其余 zh）。
  * - 切换时同步 <html lang> 与 document.title。
- * - 只翻译 UI 文案；导航数据（站点名/描述/分类名）是内容本身，不在此列。
+ * - UI 文案走字典；默认导航数据的分类名/站点描述自 R26 起也双语
+ *   （数据自带 nameEn/descriptionEn 字段，展示层按语言选，缺省回退中文）。
+ * - 用户自定义内容（自定义站点、导入的书签/清单）不翻译，原样显示。
  * - 存储不可用时静默降级为仅内存态。
  */
 export type Locale = 'zh' | 'en'
@@ -135,6 +137,11 @@ export const messages: Record<Locale, Record<string, string>> = {
     'dt.msgExported': '已导出备份（含自定义站点、收藏、最近访问）',
     'dt.msgBookmarks': '已从书签导入 {count} 个站点（{cats} 个分类）',
     'dt.msgImported': '已导入 {count} 个自定义站点、{fav} 条收藏',
+    'dt.errInvalidJson': '文件不是有效的 JSON',
+    'dt.errBadFormat': '备份文件格式不正确',
+    'dt.errNotMorigo': '这不是 MoriGo 的备份文件',
+    'dt.errNoLinks': '书签文件里没有找到任何链接',
+    'dt.importedBookmarks': '导入的书签',
     'dt.msgImportFail': '导入失败，文件格式不正确',
     'theme.button': '主题',
     'theme.aria': '主题设置',
@@ -207,7 +214,19 @@ export const messages: Record<Locale, Record<string, string>> = {
     'widget.clock': '时钟 / 日期',
     'widget.quote': '每日一言',
     'widget.countdown': '倒计时',
-    'widget.note': '小组件全部本地运行，不联网；开关与倒计时目标保存在本机浏览器。',
+    'widget.weather': '天气',
+    'widget.weather.city': '天气城市',
+    'widget.weather.myLocation': '当前位置',
+    'widget.weather.locate': '定位',
+    'widget.weather.locating': '定位中…',
+    'widget.weather.locateError': '定位失败，请手动选择城市',
+    'widget.weather.loading': '天气加载中…',
+    'widget.weather.error': '天气暂时取不到，点刷新重试',
+    'widget.weather.refresh': '刷新天气',
+    'widget.weather.feels': '体感',
+    'widget.weather.humidity': '湿度',
+    'widget.weather.wind': '风速',
+    'widget.note': '时钟/一言/倒计时本地运行；天气开启后经 Open-Meteo 拉取（免费无 key），结果在本机缓存 30 分钟。',
     'widget.another': '换一句',
     'widget.edit': '编辑倒计时',
     'widget.labelPh': '倒计时名称，如：考试',
@@ -329,12 +348,12 @@ export const messages: Record<Locale, Record<string, string>> = {
     'backToTop': 'Back to top',
     'dt.button': 'Import / Export',
     'dt.export': 'Export backup JSON',
-    'dt.share': 'Create share link (custom sites + favorites)',
+    'dt.share': 'Create share link (sites + favorites)',
     'dt.shareAria': 'Share link',
     'dt.importMode': 'Import mode',
     'dt.merge': 'Merge',
     'dt.replace': 'Replace',
-    'dt.import': 'Import backup JSON / browser bookmarks HTML',
+    'dt.import': 'Import JSON backup / bookmarks',
     'dt.replaceWarn': 'Replace overwrites your current custom sites and favorites. Export a backup first.',
     'dt.msgNoShare': 'Nothing to share yet: add a custom site or favorite some sites first',
     'dt.msgShareCopied': 'Share link copied. Anyone opening it can import the list',
@@ -342,6 +361,11 @@ export const messages: Record<Locale, Record<string, string>> = {
     'dt.msgExported': 'Backup exported (custom sites, favorites, recent visits)',
     'dt.msgBookmarks': 'Imported {count} sites from bookmarks ({cats} categories)',
     'dt.msgImported': 'Imported {count} custom sites and {fav} favorites',
+    'dt.errInvalidJson': 'The file is not valid JSON',
+    'dt.errBadFormat': 'Invalid backup file format',
+    'dt.errNotMorigo': 'This is not a MoriGo backup file',
+    'dt.errNoLinks': 'No links found in the bookmarks file',
+    'dt.importedBookmarks': 'Imported bookmarks',
     'dt.msgImportFail': 'Import failed: invalid file format',
     'theme.button': 'Theme',
     'theme.aria': 'Theme settings',
@@ -414,7 +438,19 @@ export const messages: Record<Locale, Record<string, string>> = {
     'widget.clock': 'Clock / date',
     'widget.quote': 'Daily quote',
     'widget.countdown': 'Countdown',
-    'widget.note': 'Widgets run fully locally with no network requests; toggles and the countdown target are stored in this browser.',
+    'widget.weather': 'Weather',
+    'widget.weather.city': 'Weather city',
+    'widget.weather.myLocation': 'My location',
+    'widget.weather.locate': 'Locate',
+    'widget.weather.locating': 'Locating…',
+    'widget.weather.locateError': 'Location failed; pick a city manually',
+    'widget.weather.loading': 'Loading weather…',
+    'widget.weather.error': 'Weather unavailable; tap refresh to retry',
+    'widget.weather.refresh': 'Refresh weather',
+    'widget.weather.feels': 'Feels',
+    'widget.weather.humidity': 'Humidity',
+    'widget.weather.wind': 'Wind',
+    'widget.note': 'Clock, quote and countdown run locally. When enabled, weather is fetched from Open-Meteo (free, no key) and cached locally for 30 minutes.',
     'widget.another': 'Another quote',
     'widget.edit': 'Edit countdown',
     'widget.labelPh': 'Countdown name, e.g. Exam',
@@ -442,6 +478,7 @@ function detectLocale(): Locale {
 
 const locale = ref<Locale>(detectLocale())
 
+/** 独立导出的翻译函数（工具层如 dataTransfer 也要给用户看报错文案） */
 export function t(key: string, params?: Record<string, string | number>): string {
   let text = messages[locale.value][key] ?? messages.zh[key] ?? key
   if (params) {
@@ -480,5 +517,15 @@ export function useI18n() {
     setLocale(locale.value === 'zh' ? 'en' : 'zh')
   }
 
-  return { locale, setLocale, toggleLocale, t }
+  /** 分类展示名：英文模式优先 nameEn，缺省回退 name（身份标识，永不直接展示原始字段以外的东西） */
+  function catName(cat: { name: string; nameEn?: string }): string {
+    return locale.value === 'en' && cat.nameEn ? cat.nameEn : cat.name
+  }
+
+  /** 站点描述展示文案：英文模式优先 descriptionEn，缺省回退 description */
+  function itemDesc(item: { description: string; descriptionEn?: string }): string {
+    return locale.value === 'en' && item.descriptionEn ? item.descriptionEn : item.description
+  }
+
+  return { locale, setLocale, toggleLocale, t, catName, itemDesc }
 }

@@ -11,6 +11,8 @@ export type IconValue = string
 export interface NavItem {
   title: string
   description: string
+  /** 英文描述（可选）：英文模式下展示，缺省回退 description。站点名多为品牌名，不设标题翻译 */
+  descriptionEn?: string
   url: string
   icon: IconValue
   /** 搜索别名：拼音、简称、中文译名等，命中同样算匹配（高亮只作用于标题/描述） */
@@ -21,6 +23,8 @@ export interface NavItem {
 
 export interface NavCategory {
   name: string
+  /** 英文分类名（可选）：英文模式下展示，缺省回退 name。name 始终是身份标识（合并/折叠/锚点都按它），不随语言变 */
+  nameEn?: string
   icon: IconValue
   items: NavItem[]
 }

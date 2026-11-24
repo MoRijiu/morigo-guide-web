@@ -6,15 +6,13 @@ import siteConfig from '../config/site'
 import { useSearchExtras, buildSearchUrl } from '../composables/useSearchExtras'
 import type { NavItem, SearchEngine } from '../types'
 import { useI18n } from '../i18n'
+import { engineDisplayLabel } from '../utils/engineLabel'
 
 const { locale, t } = useI18n()
 
 /** 内置引擎名按语言展示（站内/百度/必应是 UI 文案，不是数据） */
 function engineLabel(engine: SearchEngine): string {
-  if (engine.key === 'site') return t('engine.site')
-  if (locale.value === 'en' && engine.key === 'baidu') return 'Baidu'
-  if (locale.value === 'en' && engine.key === 'bing') return 'Bing'
-  return engine.label
+  return engineDisplayLabel(engine, locale.value, t)
 }
 
 const props = defineProps<{
