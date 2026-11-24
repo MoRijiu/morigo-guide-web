@@ -16,6 +16,8 @@ import { useViewPrefs } from './composables/useViewPrefs'
 import { useSearchExtras, buildSearchUrl } from './composables/useSearchExtras'
 import SiteFormModal from './components/SiteFormModal.vue'
 import DataTransfer from './components/DataTransfer.vue'
+import ThemePanel from './components/ThemePanel.vue'
+import { useThemePrefs } from './composables/useThemePrefs'
 import CommandPalette, { type PaletteEntry } from './components/CommandPalette.vue'
 import { categoryAnchorId } from './utils/slug'
 import { buildBackup, downloadBackup } from './utils/dataTransfer'
@@ -118,6 +120,7 @@ const displayCategories = computed<NavCategory[]>(() =>
 )
 
 const { customEngines, suggestionsOpen } = useSearchExtras()
+const { cycleAccent } = useThemePrefs()
 
 const externalEngines = computed(() => [
   ...siteConfig.search.engines.filter((e) => e.key !== 'site' && e.url),
@@ -280,6 +283,7 @@ const paletteEntries = computed<PaletteEntry[]>(() => {
     { kind: 'action', id: 'action:export', title: '导出备份 JSON', hint: '自定义站点 + 收藏 + 最近访问', icon: 'mdi:download', actionId: 'export-backup' },
     { kind: 'action', id: 'action:top', title: '回到顶部', icon: 'mdi:arrow-up', actionId: 'back-to-top' },
     { kind: 'action', id: 'action:view', title: '切换网格 / 列表视图', icon: 'mdi:view-grid-outline', actionId: 'toggle-view' },
+    { kind: 'action', id: 'action:accent', title: '切换强调色', hint: '紫罗兰 / 湖蓝 / 晴空 / 翠绿 / 琥珀 / 玫红', icon: 'mdi:palette-outline', actionId: 'cycle-accent' },
   ]
   const sites: PaletteEntry[] = []
   const seen = new Set<string>()
@@ -348,6 +352,8 @@ async function onPalettePick(entry: PaletteEntry) {
       window.scrollTo({ top: 0, behavior: 'smooth' })
     } else if (entry.actionId === 'toggle-view') {
       setView(view.value === 'grid' ? 'list' : 'grid')
+    } else if (entry.actionId === 'cycle-accent') {
+      cycleAccent()
     }
   }
 }
@@ -357,7 +363,8 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onGlobalKeydown, tru
 </script>
 
 <template>
-  <div class="min-h-screen flex flex-col bg-surface-50 dark:bg-surface-950">
+  <!-- 底色由 body 提供（style.css），此处不设不透明背景，否则会盖住主题背景渐变层 -->
+  <div class="min-h-screen flex flex-col">
     <a
       href="#main-content"
       class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[60] focus:px-3 focus:py-1.5 focus:rounded-md focus:bg-accent-600 focus:text-white focus:text-xs"
@@ -394,6 +401,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onGlobalKeydown, tru
           添加站点
         </button>
         <DataTransfer />
+        <ThemePanel />
         <span class="hidden sm:block w-px h-4 bg-surface-200 dark:bg-surface-700" aria-hidden="true" />
         <div class="flex items-center rounded-md border border-surface-200 dark:border-surface-700 overflow-hidden" role="group" aria-label="视图切换">
           <button

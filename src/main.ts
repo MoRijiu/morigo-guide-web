@@ -12,6 +12,10 @@ import '@fontsource/space-grotesk/latin-500.css'
 import '@fontsource/space-grotesk/latin-700.css'
 import App from './App.vue'
 import './style.css'
+import { applyThemePrefs } from './composables/useThemePrefs'
+
+// 挂载前先把主题偏好（强调色/背景/毛玻璃）落到 <html> 数据属性，避免首屏闪烁
+applyThemePrefs()
 import siteConfig from './config/site'
 
 document.title = `${siteConfig.title}${siteConfig.titleHighlight} - ${siteConfig.tagline}`
