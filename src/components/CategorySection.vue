@@ -49,7 +49,7 @@ function copyAnchor(id: string) {
       </span>
     </div>
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-      <NavCard v-for="item in category.items" :key="item.url" :item="item" :keyword="keyword" />
+      <NavCard v-for="(item, idx) in category.items" :key="item.url" :item="item" :keyword="keyword" :index="idx" />
     </div>
   </section>
 </template>

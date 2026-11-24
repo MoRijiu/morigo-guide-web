@@ -4,12 +4,15 @@ import { Icon } from '@iconify/vue'
 import DynamicIcon from './DynamicIcon.vue'
 import HighlightText from './HighlightText.vue'
 import { toSlug } from '../utils/slug'
+import { iconTint } from '../utils/iconTint'
 import { useUserData } from '../composables/useUserData'
 import type { NavItem } from '../types'
 
 const props = defineProps<{
   item: NavItem
   keyword?: string
+  /** 同组序号，仅用于入场动画错峰延迟 */
+  index?: number
 }>()
 
 const { isFavorite, toggleFavorite, recordVisit } = useUserData()
@@ -18,6 +21,8 @@ const copied = ref(false)
 let copyTimer: ReturnType<typeof setTimeout> | undefined
 
 const itemId = computed(() => `nav-${toSlug(props.item.title)}`)
+const tint = computed(() => iconTint(props.item.title))
+const enterDelay = computed(() => `${Math.min(props.index ?? 0, 8) * 30}ms`)
 
 function onToggleFavorite(e: Event) {
   e.preventDefault()
@@ -46,14 +51,16 @@ async function onCopyLink(e: Event) {
     target="_blank"
     rel="noopener noreferrer"
     class="nav-card group scroll-mt-20"
+    :style="{ animationDelay: enterDelay }"
     @click="recordVisit(item.url)"
   >
-    <div class="w-9 h-9 rounded-md bg-surface-100 dark:bg-surface-700/60 flex items-center justify-center shrink-0 group-hover:bg-accent-50 dark:group-hover:bg-accent-900/20 transition-colors duration-200">
-      <DynamicIcon :icon="item.icon" class="text-lg text-surface-400 dark:text-surface-400 group-hover:text-accent-500 dark:group-hover:text-accent-400 transition-colors duration-200" />
+    <div :class="['w-9 h-9 rounded-md flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-105', tint.bg]">
+      <DynamicIcon :icon="item.icon" :class="'text-lg ' + tint.text" />
     </div>
     <div class="min-w-0 flex-1">
       <h3 class="text-[13px] font-medium text-surface-700 dark:text-surface-200 truncate group-hover:text-accent-600 dark:group-hover:text-accent-400 transition-colors duration-200">
         <HighlightText :text="item.title" :keyword="keyword" />
+        <Icon v-if="item.hot" icon="mdi:fire" class="inline-block text-[11px] text-orange-400 ml-1 -mt-0.5" aria-label="热门" />
       </h3>
       <p class="text-[11px] text-surface-400 dark:text-surface-500 truncate mt-0.5 leading-tight">
         <HighlightText :text="item.description" :keyword="keyword" />
