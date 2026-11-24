@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { Icon } from '@iconify/vue'
 import DynamicIcon from './components/DynamicIcon.vue'
 import NavHeader from './components/NavHeader.vue'
@@ -42,7 +42,7 @@ const resultCount = computed(() =>
   filteredCategories.value.reduce((sum, cat) => sum + cat.items.length, 0)
 )
 
-const { favorites, recent, clearRecent } = useUserData()
+const { favorites, recent, clearRecent, recordVisit } = useUserData()
 
 const itemByUrl = computed(() => {
   const map = new Map<string, NavItem>()
@@ -89,10 +89,83 @@ const hotItems = computed<NavItem[]>(() =>
 function onSearch(val: string) {
   keyword.value = val
 }
+
+// ==================== 键盘流 ====================
+const searchBarRef = ref<InstanceType<typeof SearchBar> | null>(null)
+const activeIndex = ref(-1)
+
+/** 当前可见卡片按展示顺序拉平（同 url 只取首次出现，与高亮 key 对齐） */
+const flatNav = computed(() => {
+  const seen = new Set<string>()
+  const list: { key: string; item: NavItem }[] = []
+  for (const cat of displayCategories.value) {
+    for (const item of cat.items) {
+      if (seen.has(item.url)) continue
+      seen.add(item.url)
+      list.push({ key: `${cat.name}:${item.url}`, item })
+    }
+  }
+  return list
+})
+
+const activeKey = computed(() =>
+  activeIndex.value >= 0 ? flatNav.value[activeIndex.value]?.key : undefined
+)
+
+// 搜索词变化即取消键盘选中，避免高亮落到已过滤掉的卡片上
+watch(trimmedKeyword, () => {
+  activeIndex.value = -1
+})
+
+function isEditableTarget(e: KeyboardEvent): boolean {
+  const t = e.target as HTMLElement | null
+  if (!t) return false
+  return t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable
+}
+
+function onGlobalKeydown(e: KeyboardEvent) {
+  if (e.metaKey || e.ctrlKey || e.altKey) return
+
+  // 「/」在非输入状态下聚焦搜索框
+  if (e.key === '/' && !isEditableTarget(e)) {
+    e.preventDefault()
+    searchBarRef.value?.focusInput()
+    return
+  }
+
+  const fromSearch = (e.target as HTMLElement | null)?.id === 'morigo-search-input'
+  if (!fromSearch && activeIndex.value < 0) return
+  if (!flatNav.value.length) return
+
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    e.preventDefault()
+    const delta = e.key === 'ArrowDown' ? 1 : -1
+    const next = activeIndex.value + delta
+    activeIndex.value = Math.max(0, Math.min(next, flatNav.value.length - 1))
+  } else if (e.key === 'Enter' && activeIndex.value >= 0) {
+    // 捕获阶段拦截，避免搜索框自身的 Enter 处理（外部引擎跳转）同时触发
+    e.preventDefault()
+    e.stopPropagation()
+    const target = flatNav.value[activeIndex.value]
+    if (target) {
+      recordVisit(target.item.url)
+      window.open(target.item.url, '_blank', 'noopener')
+    }
+  } else if (e.key === 'Escape' && activeIndex.value >= 0 && !fromSearch) {
+    activeIndex.value = -1
+  }
+}
+
+onMounted(() => window.addEventListener('keydown', onGlobalKeydown, true))
+onBeforeUnmount(() => window.removeEventListener('keydown', onGlobalKeydown, true))
 </script>
 
 <template>
   <div class="min-h-screen flex flex-col bg-surface-50 dark:bg-surface-950">
+    <a
+      href="#main-content"
+      class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[60] focus:px-3 focus:py-1.5 focus:rounded-md focus:bg-accent-600 focus:text-white focus:text-xs"
+    >跳到导航内容</a>
     <NavHeader />
 
     <div class="pt-9 pb-6 px-5 text-center">
@@ -101,14 +174,15 @@ function onSearch(val: string) {
         {{ siteConfig.title }}<span class="text-accent-600 dark:text-accent-400">{{ siteConfig.titleHighlight }}</span>
       </h2>
       <p class="text-surface-400 dark:text-surface-500 text-xs mb-5">{{ siteConfig.tagline }} · 共 {{ totalCount }} 个站点</p>
-      <SearchBar v-if="siteConfig.search.enabled" @search="onSearch" />
+      <SearchBar v-if="siteConfig.search.enabled" ref="searchBarRef" @search="onSearch" />
     </div>
 
-    <main class="flex-1 max-w-6xl w-full mx-auto px-5 sm:px-8 pb-14">
+    <main id="main-content" class="flex-1 max-w-6xl w-full mx-auto px-5 sm:px-8 pb-14">
       <CategoryNav :categories="displayCategories" />
 
-      <p v-if="trimmedKeyword && filteredCategories.length" class="text-xs text-surface-400 dark:text-surface-500 mb-5">
-        找到 <span class="text-accent-600 dark:text-accent-400 font-medium">{{ resultCount }}</span> 个与「{{ trimmedKeyword }}」相关的导航
+      <p v-if="trimmedKeyword && filteredCategories.length" class="text-xs text-surface-400 dark:text-surface-500 mb-5 flex items-center justify-between gap-3">
+        <span>找到 <span class="text-accent-600 dark:text-accent-400 font-medium">{{ resultCount }}</span> 个与「{{ trimmedKeyword }}」相关的导航</span>
+        <span class="hidden md:inline text-surface-300 dark:text-surface-600">↑↓ 选择 · Enter 打开</span>
       </p>
 
       <template v-if="displayCategories.length">
@@ -118,6 +192,7 @@ function onSearch(val: string) {
           :category="category"
           :keyword="trimmedKeyword"
           :clear-label="!trimmedKeyword && category.name === '最近访问' ? '清空' : undefined"
+          :active-key="activeKey"
           @clear="clearRecent"
         />
       </template>
@@ -128,7 +203,7 @@ function onSearch(val: string) {
           <p class="text-sm text-surface-500 dark:text-surface-400">
             站内没有找到「<span class="font-medium text-surface-700 dark:text-surface-200">{{ trimmedKeyword }}</span>」
           </p>
-          <p class="text-xs text-surface-400 dark:text-surface-500 mt-1.5">换个关键词，或者直接去外部搜：</p>
+          <p class="text-xs text-surface-400 dark:text-surface-500 mt-1.5">试试更短的词或别名（比如「b站」「谷歌」），或者直接去外部搜：</p>
           <div class="flex items-center justify-center gap-2 mt-4">
             <a
               v-for="engine in externalEngines"
@@ -157,14 +232,30 @@ function onSearch(val: string) {
     </main>
 
     <footer class="border-t border-surface-100 dark:border-surface-800/60 py-5">
-      <div class="max-w-6xl mx-auto px-5 sm:px-8 flex items-center justify-between text-[11px] text-surface-300 dark:text-surface-600">
+      <div class="max-w-6xl mx-auto px-5 sm:px-8 flex flex-col sm:flex-row items-center gap-2 sm:gap-3 text-[11px] text-surface-300 dark:text-surface-600">
         <span class="flex items-center gap-1">
           <DynamicIcon :icon="siteConfig.logoIcon" class="text-xs text-accent-500/50" />
-          &copy; {{ new Date().getFullYear() }} {{ siteConfig.title }}{{ siteConfig.titleHighlight }}
+          &copy; {{ new Date().getFullYear() }} {{ siteConfig.title }}{{ siteConfig.titleHighlight }} · {{ siteConfig.tagline }}
         </span>
-        <span class="flex items-center gap-3">
+        <span class="hidden lg:flex items-center gap-2 sm:mx-auto" aria-label="键盘快捷键">
+          <span><kbd class="kbd-hint">/</kbd> 搜索</span>
+          <span><kbd class="kbd-hint">↑</kbd><kbd class="kbd-hint">↓</kbd> 选择</span>
+          <span><kbd class="kbd-hint">Enter</kbd> 打开</span>
+          <span><kbd class="kbd-hint">Esc</kbd> 清空</span>
+        </span>
+        <span class="flex items-center gap-3 sm:ml-auto lg:ml-0">
           <span>{{ APP_VERSION_LABEL }}</span>
           <a :href="siteConfig.domainUrl" class="hover:text-surface-500 dark:hover:text-surface-400 transition-colors">{{ siteConfig.domain }}</a>
+          <a
+            v-if="siteConfig.githubUrl"
+            :href="siteConfig.githubUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="hover:text-surface-500 dark:hover:text-surface-400 transition-colors"
+            aria-label="GitHub 仓库"
+          >
+            <Icon icon="mdi:github" class="text-sm" />
+          </a>
         </span>
       </div>
     </footer>

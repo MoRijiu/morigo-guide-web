@@ -17,6 +17,13 @@
   ::selection {
     @apply bg-accent-200 dark:bg-accent-800/60;
   }
+
+  /* 键盘焦点统一可见轮廓（鼠标点击不触发） */
+  :focus-visible {
+    outline: 2px solid rgba(167, 139, 250, 0.75);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
 }
 
 @layer components {
@@ -62,6 +69,11 @@
 
   .category-bar {
     @apply flex items-center gap-2.5 mb-5 pb-2 border-b border-surface-100 dark:border-surface-800;
+  }
+
+  .kbd-hint {
+    @apply inline-block px-1 py-px rounded border border-surface-200 dark:border-surface-700
+           text-[10px] leading-none text-surface-400 dark:text-surface-500 align-middle;
   }
 
   .search-box {

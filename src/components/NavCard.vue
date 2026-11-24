@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { Icon } from '@iconify/vue'
 import DynamicIcon from './DynamicIcon.vue'
 import HighlightText from './HighlightText.vue'
@@ -13,7 +13,19 @@ const props = defineProps<{
   keyword?: string
   /** 同组序号，仅用于入场动画错峰延迟 */
   index?: number
+  /** 键盘方向键当前选中态 */
+  active?: boolean
 }>()
+
+const rootRef = ref<HTMLElement | null>(null)
+
+// 键盘选中时把卡片滚进可视区（不抢焦点，焦点仍留在搜索框）
+watch(
+  () => props.active,
+  (v) => {
+    if (v) rootRef.value?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+  }
+)
 
 const { isFavorite, toggleFavorite, recordVisit } = useUserData()
 const favorited = computed(() => isFavorite(props.item.url))
@@ -46,11 +58,13 @@ async function onCopyLink(e: Event) {
 
 <template>
   <a
+    ref="rootRef"
     :id="itemId"
     :href="item.url"
     target="_blank"
     rel="noopener noreferrer"
-    class="nav-card group scroll-mt-20"
+    class="nav-card group scroll-mt-32"
+    :class="active ? 'ring-2 ring-accent-400/70 dark:ring-accent-500/70 !border-accent-300 dark:!border-accent-500/50' : ''"
     :style="{ animationDelay: enterDelay }"
     @click="recordVisit(item.url)"
   >
@@ -77,7 +91,7 @@ async function onCopyLink(e: Event) {
           'p-1 rounded transition-all',
           favorited
             ? 'text-amber-400 opacity-100'
-            : 'text-surface-300 dark:text-surface-600 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:text-amber-400',
+            : 'text-surface-300 dark:text-surface-600 opacity-60 sm:opacity-0 sm:group-hover:opacity-100 focus-visible:opacity-100 hover:text-amber-400',
         ]"
       >
         <Icon :icon="favorited ? 'mdi:star' : 'mdi:star-outline'" class="text-sm" />
@@ -91,7 +105,7 @@ async function onCopyLink(e: Event) {
           'p-1 rounded transition-all',
           copied
             ? 'text-emerald-500 opacity-100'
-            : 'text-surface-300 dark:text-surface-600 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:text-accent-500',
+            : 'text-surface-300 dark:text-surface-600 opacity-60 sm:opacity-0 sm:group-hover:opacity-100 focus-visible:opacity-100 hover:text-accent-500',
         ]"
       >
         <Icon :icon="copied ? 'mdi:check' : 'mdi:content-copy'" class="text-sm" />

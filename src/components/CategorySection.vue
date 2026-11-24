@@ -11,6 +11,8 @@ const props = defineProps<{
   keyword?: string
   /** 传入时在标题栏右侧显示清除按钮（如最近访问的「清空」） */
   clearLabel?: string
+  /** 键盘选中的卡片 key（`${分类名}:${url}`），命中者高亮 */
+  activeKey?: string
 }>()
 
 const emit = defineEmits<{ clear: [] }>()
@@ -24,7 +26,7 @@ function copyAnchor(id: string) {
 </script>
 
 <template>
-  <section :id="categoryId" class="mb-9 scroll-mt-20">
+  <section :id="categoryId" class="mb-9 scroll-mt-28">
     <div class="category-bar group/cat">
       <DynamicIcon :icon="category.icon" class="text-accent-500 dark:text-accent-400 text-base" />
       <a :href="'#' + categoryId" class="text-sm font-semibold text-surface-600 dark:text-surface-300 tracking-wide hover:text-accent-600 dark:hover:text-accent-400 transition-colors">
@@ -41,15 +43,23 @@ function copyAnchor(id: string) {
         </button>
         <button
           @click="copyAnchor(categoryId)"
-          class="opacity-0 group-hover/cat:opacity-100 text-surface-300 dark:text-surface-600 hover:text-accent-500 transition-all"
+          class="opacity-0 group-hover/cat:opacity-100 focus-visible:opacity-100 text-surface-300 dark:text-surface-600 hover:text-accent-500 transition-all"
           title="复制锚点链接"
+          aria-label="复制锚点链接"
         >
           <Icon icon="mdi:link-variant" class="text-sm" />
         </button>
       </span>
     </div>
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-      <NavCard v-for="(item, idx) in category.items" :key="item.url" :item="item" :keyword="keyword" :index="idx" />
+      <NavCard
+        v-for="(item, idx) in category.items"
+        :key="item.url"
+        :item="item"
+        :keyword="keyword"
+        :index="idx"
+        :active="activeKey === `${category.name}:${item.url}`"
+      />
     </div>
   </section>
 </template>
