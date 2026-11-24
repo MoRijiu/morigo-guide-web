@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useCustomData } from '../composables/useCustomData'
 import { useUserData } from '../composables/useUserData'
@@ -9,6 +9,7 @@ import {
   parseBackup,
   parseBookmarks,
 } from '../utils/dataTransfer'
+import { buildShareUrl } from '../utils/share'
 
 const { customCategories, importCategories } = useCustomData()
 const { favorites, recent, importUserData } = useUserData()
@@ -18,6 +19,36 @@ const mode = ref<'merge' | 'replace'>('merge')
 const message = ref('')
 const isError = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
+
+const shareUrl = ref('')
+
+async function onShare() {
+  if (!customCategories.value.length && !favorites.value.length) {
+    message.value = '还没有可分享的内容：先添加自定义站点或收藏一些站点'
+    isError.value = true
+    return
+  }
+  shareUrl.value = buildShareUrl({
+    customCategories: customCategories.value,
+    favorites: favorites.value,
+  })
+  try {
+    await navigator.clipboard.writeText(shareUrl.value)
+    message.value = '分享链接已复制，发给朋友打开即可导入'
+    isError.value = false
+  } catch {
+    message.value = '链接已生成，请手动复制下方链接'
+    isError.value = false
+  }
+}
+
+function onOpenShareEvent() {
+  open.value = true
+  void onShare()
+}
+
+onMounted(() => window.addEventListener('morigo:open-share', onOpenShareEvent))
+onBeforeUnmount(() => window.removeEventListener('morigo:open-share', onOpenShareEvent))
 
 function onExport() {
   downloadBackup(buildBackup(customCategories.value, favorites.value, recent.value))
@@ -79,6 +110,23 @@ async function onFile(e: Event) {
         <Icon icon="mdi:download" class="text-sm" />
         导出备份 JSON
       </button>
+
+      <button
+        type="button"
+        class="w-full flex items-center gap-1.5 px-2 py-1.5 rounded-md text-xs font-medium text-surface-600 dark:text-surface-300 hover:bg-surface-50 dark:hover:bg-surface-800 transition-colors"
+        @click="onShare"
+      >
+        <Icon icon="mdi:share-variant" class="text-sm" />
+        生成分享链接（自定义站点 + 收藏）
+      </button>
+      <input
+        v-if="shareUrl"
+        :value="shareUrl"
+        readonly
+        aria-label="分享链接"
+        class="w-full mt-1 px-2 py-1.5 rounded-md border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 text-[11px] text-surface-500 dark:text-surface-400"
+        @focus="($event.target as HTMLInputElement).select()"
+      />
 
       <div class="flex items-center gap-1.5 mt-2 px-2">
         <span class="text-[11px] text-surface-400 dark:text-surface-500">导入方式</span>
