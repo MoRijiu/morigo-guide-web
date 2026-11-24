@@ -181,3 +181,11 @@ html[data-glass='true'] .search-box {
 html.dark[data-glass='true'] .search-box {
   background-color: rgb(30 30 33 / 0.65);
 }
+html[data-glass='true'] .widget-card {
+  background-color: rgb(255 255 255 / 0.62);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+html.dark[data-glass='true'] .widget-card {
+  background-color: rgb(39 39 42 / 0.55);
+}
