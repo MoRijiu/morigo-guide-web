@@ -36,6 +36,7 @@ MoriGo 是一个开源、可自部署的网址导航站（生产：go.morijiu.cn
 | R10 | 自定义站点 | 访客在页面增删改自己的导航项与分类（localStorage 持久化），同名分类并入默认分类、新分类置顶展示；与构建期 `navigation.local.ts` 覆盖互补 |
 | R9 | 字体自托管 | Inter / Space Grotesk 改 @fontsource 本地 woff2（latin 子集、font-display: swap），移除 Google Fonts 运行时外链；meta 文案改开源通用口径 |
 | R11 | 数据导入导出 | 导出备份 JSON（自定义站点 + 收藏 + 最近访问）；导入备份 JSON（合并/覆盖两种方式、结构校验与 URL 规范化）；导入浏览器书签 HTML（按文件夹分组） |
+| R12 | 命令面板 | Ctrl/⌘+K 全局面板：子序列模糊搜索（标题/描述/别名/URL）+ 动作命令（切换主题、添加站点、导出备份、回顶部）+ 分类直达；↑↓/Enter/Esc 全键盘操作 |
 
 ### 2.3 非目标
 

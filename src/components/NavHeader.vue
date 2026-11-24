@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { Icon } from '@iconify/vue'
 import DynamicIcon from './DynamicIcon.vue'
 import siteConfig from '../config/site'
@@ -8,6 +8,12 @@ const isDark = ref(false)
 
 onMounted(() => {
   isDark.value = document.documentElement.classList.contains('dark')
+  // 命令面板等外部入口通过事件请求切换主题，状态仍由顶栏统一持有
+  window.addEventListener('morigo:toggle-theme', toggleDark)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('morigo:toggle-theme', toggleDark)
 })
 
 function toggleDark() {

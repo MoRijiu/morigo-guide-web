@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import { Icon } from '@iconify/vue'
 import DynamicIcon from './components/DynamicIcon.vue'
 import NavHeader from './components/NavHeader.vue'
@@ -14,6 +14,9 @@ import { useUserData } from './composables/useUserData'
 import { useCustomData } from './composables/useCustomData'
 import SiteFormModal from './components/SiteFormModal.vue'
 import DataTransfer from './components/DataTransfer.vue'
+import CommandPalette, { type PaletteEntry } from './components/CommandPalette.vue'
+import { categoryAnchorId } from './utils/slug'
+import { buildBackup, downloadBackup } from './utils/dataTransfer'
 import type { NavItem, NavCategory } from './types'
 
 const keyword = ref('')
@@ -30,6 +33,7 @@ function matches(item: NavItem, k: string): boolean {
 }
 
 const { customCategories, addItem, updateItem, removeItem } = useCustomData()
+const customCategoriesRef = customCategories
 
 /**
  * 展示用全量分类：自定义分类并入——同名分类追加到默认分类末尾，
@@ -180,6 +184,12 @@ function isEditableTarget(e: KeyboardEvent): boolean {
 }
 
 function onGlobalKeydown(e: KeyboardEvent) {
+  // Ctrl/⌘+K 呼出/关闭命令面板（优先于其他快捷键处理）
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+    e.preventDefault()
+    paletteOpen.value = !paletteOpen.value
+    return
+  }
   if (e.metaKey || e.ctrlKey || e.altKey) return
 
   // 「/」在非输入状态下聚焦搜索框
@@ -212,6 +222,80 @@ function onGlobalKeydown(e: KeyboardEvent) {
   }
 }
 
+// ==================== 命令面板 ====================
+const paletteOpen = ref(false)
+
+const paletteEntries = computed<PaletteEntry[]>(() => {
+  const actions: PaletteEntry[] = [
+    { kind: 'action', id: 'action:theme', title: '切换深色 / 浅色模式', icon: 'mdi:theme-light-dark', actionId: 'toggle-theme' },
+    { kind: 'action', id: 'action:add', title: '添加自定义站点', icon: 'mdi:plus', actionId: 'add-site' },
+    { kind: 'action', id: 'action:export', title: '导出备份 JSON', hint: '自定义站点 + 收藏 + 最近访问', icon: 'mdi:download', actionId: 'export-backup' },
+    { kind: 'action', id: 'action:top', title: '回到顶部', icon: 'mdi:arrow-up', actionId: 'back-to-top' },
+  ]
+  const sites: PaletteEntry[] = []
+  const seen = new Set<string>()
+  for (const cat of displayCategories.value) {
+    for (const item of cat.items) {
+      if (seen.has(item.url)) continue
+      seen.add(item.url)
+      sites.push({
+        kind: 'site',
+        id: `site:${item.url}`,
+        title: item.title,
+        hint: item.description,
+        icon: item.icon,
+        item,
+        categoryName: cat.name,
+      })
+    }
+  }
+  const hot = sites.filter((s) => s.item?.hot)
+  const rest = sites.filter((s) => !s.item?.hot)
+  const categories: PaletteEntry[] = displayCategories.value.map((cat) => ({
+    kind: 'category',
+    id: `cat:${cat.name}`,
+    title: `跳到「${cat.name}」`,
+    hint: `${cat.items.length} 个站点`,
+    icon: cat.icon,
+    categoryName: cat.name,
+  }))
+  return [...actions, ...hot, ...categories, ...rest]
+})
+
+function scrollToCategory(name: string) {
+  document
+    .getElementById(categoryAnchorId(name))
+    ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
+async function onPalettePick(entry: PaletteEntry) {
+  paletteOpen.value = false
+  if (entry.kind === 'site' && entry.item) {
+    recordVisit(entry.item.url)
+    window.open(entry.item.url, '_blank', 'noopener')
+    return
+  }
+  if (entry.kind === 'category' && entry.categoryName) {
+    if (trimmedKeyword.value) {
+      keyword.value = ''
+      await nextTick()
+    }
+    scrollToCategory(entry.categoryName)
+    return
+  }
+  if (entry.kind === 'action') {
+    if (entry.actionId === 'toggle-theme') {
+      window.dispatchEvent(new Event('morigo:toggle-theme'))
+    } else if (entry.actionId === 'add-site') {
+      openAddForm()
+    } else if (entry.actionId === 'export-backup') {
+      downloadBackup(buildBackup(customCategoriesRef.value, favorites.value, recent.value))
+    } else if (entry.actionId === 'back-to-top') {
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  }
+}
+
 onMounted(() => window.addEventListener('keydown', onGlobalKeydown, true))
 onBeforeUnmount(() => window.removeEventListener('keydown', onGlobalKeydown, true))
 </script>
@@ -236,6 +320,15 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onGlobalKeydown, tru
     <main id="main-content" class="flex-1 max-w-6xl w-full mx-auto px-5 sm:px-8 pb-14">
       <div v-if="!trimmedKeyword" class="flex items-center justify-end gap-3 mb-3 -mt-1">
         <span class="hidden sm:inline text-[11px] text-surface-300 dark:text-surface-600">自定义站点保存在本机浏览器</span>
+        <button
+          type="button"
+          class="flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium border border-surface-200 dark:border-surface-700 text-surface-600 dark:text-surface-300 hover:border-accent-400 hover:text-accent-600 dark:hover:text-accent-400 transition-colors"
+          @click="paletteOpen = true"
+        >
+          <Icon icon="mdi:apple-keyboard-command" class="text-sm" />
+          命令面板
+          <kbd class="kbd-hint hidden md:inline">⌘K</kbd>
+        </button>
         <button
           type="button"
           class="flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium border border-surface-200 dark:border-surface-700 text-surface-600 dark:text-surface-300 hover:border-accent-400 hover:text-accent-600 dark:hover:text-accent-400 transition-colors"
@@ -308,6 +401,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onGlobalKeydown, tru
           &copy; {{ new Date().getFullYear() }} {{ siteConfig.title }}{{ siteConfig.titleHighlight }} · {{ siteConfig.tagline }}
         </span>
         <span class="hidden lg:flex items-center gap-2 sm:mx-auto" aria-label="键盘快捷键">
+          <span><kbd class="kbd-hint">⌘K</kbd> 命令面板</span>
           <span><kbd class="kbd-hint">/</kbd> 搜索</span>
           <span><kbd class="kbd-hint">↑</kbd><kbd class="kbd-hint">↓</kbd> 选择</span>
           <span><kbd class="kbd-hint">Enter</kbd> 打开</span>
@@ -331,6 +425,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onGlobalKeydown, tru
     </footer>
 
     <BackToTop />
+    <CommandPalette :open="paletteOpen" :entries="paletteEntries" @close="paletteOpen = false" @pick="onPalettePick" />
     <SiteFormModal
       :open="formOpen"
       :initial="formInitial"
