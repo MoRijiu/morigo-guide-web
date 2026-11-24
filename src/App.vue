@@ -6,6 +6,7 @@ import SearchBar from './components/SearchBar.vue'
 import CategorySection from './components/CategorySection.vue'
 import BackToTop from './components/BackToTop.vue'
 import siteConfig from './config/site'
+import { APP_VERSION_LABEL } from './version'
 
 const keyword = ref('')
 
@@ -64,7 +65,10 @@ function onSearch(val: string) {
           <DynamicIcon :icon="siteConfig.logoIcon" class="text-xs text-accent-500/50" />
           &copy; {{ new Date().getFullYear() }} {{ siteConfig.title }}{{ siteConfig.titleHighlight }}
         </span>
-        <a :href="siteConfig.domainUrl" class="hover:text-surface-500 dark:hover:text-surface-400 transition-colors">{{ siteConfig.domain }}</a>
+        <span class="flex items-center gap-3">
+          <span>{{ APP_VERSION_LABEL }}</span>
+          <a :href="siteConfig.domainUrl" class="hover:text-surface-500 dark:hover:text-surface-400 transition-colors">{{ siteConfig.domain }}</a>
+        </span>
       </div>
     </footer>
 
