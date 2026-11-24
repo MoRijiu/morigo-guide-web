@@ -12,6 +12,7 @@ import siteConfig from './config/site'
 import { APP_VERSION_LABEL } from './version'
 import { useUserData } from './composables/useUserData'
 import { useCustomData } from './composables/useCustomData'
+import { useViewPrefs } from './composables/useViewPrefs'
 import SiteFormModal from './components/SiteFormModal.vue'
 import DataTransfer from './components/DataTransfer.vue'
 import CommandPalette, { type PaletteEntry } from './components/CommandPalette.vue'
@@ -67,6 +68,23 @@ const resultCount = computed(() =>
 )
 
 const { favorites, recent, clearRecent, recordVisit } = useUserData()
+
+// ==================== 视图与布局 ====================
+const { view, density, setView, setDensity, isCollapsed, toggleCollapsed, setAllCollapsed } =
+  useViewPrefs()
+
+const allCollapsed = computed(
+  () =>
+    displayCategories.value.length > 0 &&
+    displayCategories.value.every((c) => isCollapsed(c.name))
+)
+
+function toggleAllCollapsed() {
+  setAllCollapsed(
+    displayCategories.value.map((c) => c.name),
+    !allCollapsed.value
+  )
+}
 
 const itemByUrl = computed(() => {
   const map = new Map<string, NavItem>()
@@ -159,6 +177,8 @@ const flatNav = computed(() => {
   const seen = new Set<string>()
   const list: { key: string; item: NavItem }[] = []
   for (const cat of displayCategories.value) {
+    // 折叠的分类卡片不在页面上，键盘选择跳过（搜索态不折叠，无需判断）
+    if (!trimmedKeyword.value && isCollapsed(cat.name)) continue
     for (const item of cat.items) {
       if (seen.has(item.url)) continue
       seen.add(item.url)
@@ -231,6 +251,7 @@ const paletteEntries = computed<PaletteEntry[]>(() => {
     { kind: 'action', id: 'action:add', title: '添加自定义站点', icon: 'mdi:plus', actionId: 'add-site' },
     { kind: 'action', id: 'action:export', title: '导出备份 JSON', hint: '自定义站点 + 收藏 + 最近访问', icon: 'mdi:download', actionId: 'export-backup' },
     { kind: 'action', id: 'action:top', title: '回到顶部', icon: 'mdi:arrow-up', actionId: 'back-to-top' },
+    { kind: 'action', id: 'action:view', title: '切换网格 / 列表视图', icon: 'mdi:view-grid-outline', actionId: 'toggle-view' },
   ]
   const sites: PaletteEntry[] = []
   const seen = new Set<string>()
@@ -262,7 +283,12 @@ const paletteEntries = computed<PaletteEntry[]>(() => {
   return [...actions, ...hot, ...categories, ...rest]
 })
 
-function scrollToCategory(name: string) {
+async function scrollToCategory(name: string) {
+  // 目标分类若被折叠，先展开再滚动（等 v-if 渲染完成）
+  if (isCollapsed(name)) {
+    toggleCollapsed(name)
+    await nextTick()
+  }
   document
     .getElementById(categoryAnchorId(name))
     ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -292,6 +318,8 @@ async function onPalettePick(entry: PaletteEntry) {
       downloadBackup(buildBackup(customCategoriesRef.value, favorites.value, recent.value))
     } else if (entry.actionId === 'back-to-top') {
       window.scrollTo({ top: 0, behavior: 'smooth' })
+    } else if (entry.actionId === 'toggle-view') {
+      setView(view.value === 'grid' ? 'list' : 'grid')
     }
   }
 }
@@ -318,7 +346,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onGlobalKeydown, tru
     </div>
 
     <main id="main-content" class="flex-1 max-w-6xl w-full mx-auto px-5 sm:px-8 pb-14">
-      <div v-if="!trimmedKeyword" class="flex items-center justify-end gap-3 mb-3 -mt-1">
+      <div v-if="!trimmedKeyword" class="flex flex-wrap items-center justify-end gap-x-3 gap-y-2 mb-3 -mt-1">
         <span class="hidden sm:inline text-[11px] text-surface-300 dark:text-surface-600">自定义站点保存在本机浏览器</span>
         <button
           type="button"
@@ -338,6 +366,58 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onGlobalKeydown, tru
           添加站点
         </button>
         <DataTransfer />
+        <span class="hidden sm:block w-px h-4 bg-surface-200 dark:bg-surface-700" aria-hidden="true" />
+        <div class="flex items-center rounded-md border border-surface-200 dark:border-surface-700 overflow-hidden" role="group" aria-label="视图切换">
+          <button
+            type="button"
+            title="网格视图"
+            aria-label="网格视图"
+            :aria-pressed="view === 'grid'"
+            :class="['p-1.5 transition-colors', view === 'grid' ? 'bg-accent-50 dark:bg-accent-500/15 text-accent-600 dark:text-accent-400' : 'text-surface-400 dark:text-surface-500 hover:text-surface-600 dark:hover:text-surface-300']"
+            @click="setView('grid')"
+          >
+            <Icon icon="mdi:view-grid-outline" class="text-sm block" />
+          </button>
+          <button
+            type="button"
+            title="列表视图"
+            aria-label="列表视图"
+            :aria-pressed="view === 'list'"
+            :class="['p-1.5 transition-colors', view === 'list' ? 'bg-accent-50 dark:bg-accent-500/15 text-accent-600 dark:text-accent-400' : 'text-surface-400 dark:text-surface-500 hover:text-surface-600 dark:hover:text-surface-300']"
+            @click="setView('list')"
+          >
+            <Icon icon="mdi:view-list-outline" class="text-sm block" />
+          </button>
+        </div>
+        <div class="flex items-center rounded-md border border-surface-200 dark:border-surface-700 overflow-hidden" role="group" aria-label="密度切换">
+          <button
+            type="button"
+            title="舒适密度"
+            aria-label="舒适密度"
+            :aria-pressed="density === 'comfortable'"
+            :class="['p-1.5 transition-colors', density === 'comfortable' ? 'bg-accent-50 dark:bg-accent-500/15 text-accent-600 dark:text-accent-400' : 'text-surface-400 dark:text-surface-500 hover:text-surface-600 dark:hover:text-surface-300']"
+            @click="setDensity('comfortable')"
+          >
+            <Icon icon="mdi:arrow-expand-vertical" class="text-sm block" />
+          </button>
+          <button
+            type="button"
+            title="紧凑密度"
+            aria-label="紧凑密度"
+            :aria-pressed="density === 'compact'"
+            :class="['p-1.5 transition-colors', density === 'compact' ? 'bg-accent-50 dark:bg-accent-500/15 text-accent-600 dark:text-accent-400' : 'text-surface-400 dark:text-surface-500 hover:text-surface-600 dark:hover:text-surface-300']"
+            @click="setDensity('compact')"
+          >
+            <Icon icon="mdi:arrow-collapse-vertical" class="text-sm block" />
+          </button>
+        </div>
+        <button
+          type="button"
+          class="hidden md:flex items-center gap-1 px-2 py-1.5 rounded-md text-xs text-surface-400 dark:text-surface-500 hover:text-accent-600 dark:hover:text-accent-400 transition-colors"
+          @click="toggleAllCollapsed"
+        >
+          {{ allCollapsed ? '展开全部' : '折叠全部' }}
+        </button>
       </div>
       <CategoryNav :categories="displayCategories" />
 
@@ -354,6 +434,10 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onGlobalKeydown, tru
           :keyword="trimmedKeyword"
           :clear-label="!trimmedKeyword && category.name === '最近访问' ? '清空' : undefined"
           :active-key="activeKey"
+          :view-mode="view"
+          :density="density"
+          :collapsed="!trimmedKeyword && isCollapsed(category.name)"
+          @toggle-collapse="toggleCollapsed(category.name)"
           @clear="clearRecent"
           @edit="openEditForm"
           @remove="onRemoveItem"

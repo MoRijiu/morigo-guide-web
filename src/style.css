@@ -57,6 +57,11 @@
     }
   }
 
+  /* 紧凑密度：卡片内边距收紧（图标盒尺寸在 NavCard 内按密度切换） */
+  .nav-card-compact {
+    @apply px-3 py-2;
+  }
+
   .nav-card::after {
     content: '';
     @apply absolute inset-0 rounded-lg opacity-0 transition-opacity duration-200;

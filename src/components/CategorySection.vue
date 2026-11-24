@@ -13,13 +13,29 @@ const props = defineProps<{
   clearLabel?: string
   /** 键盘选中的卡片 key（`${分类名}:${url}`），命中者高亮 */
   activeKey?: string
+  /** 视图：grid 网格 / list 列表 */
+  viewMode?: 'grid' | 'list'
+  /** 密度：comfortable 舒适 / compact 紧凑 */
+  density?: 'comfortable' | 'compact'
+  /** 是否折叠（搜索态由父级强制传 false） */
+  collapsed?: boolean
 }>()
 
 const emit = defineEmits<{
   clear: []
   edit: [payload: { categoryName: string; item: NavItem }]
   remove: [payload: { categoryName: string; item: NavItem }]
+  'toggle-collapse': []
 }>()
+
+const containerClass = computed(() => {
+  if (props.viewMode === 'list') {
+    return props.density === 'compact' ? 'flex flex-col gap-1' : 'flex flex-col gap-1.5'
+  }
+  return props.density === 'compact'
+    ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2'
+    : 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5'
+})
 
 import type { NavItem } from '../types'
 
@@ -32,8 +48,18 @@ function copyAnchor(id: string) {
 </script>
 
 <template>
-  <section :id="categoryId" class="mb-9 scroll-mt-28">
+  <section :id="categoryId" :class="collapsed ? 'mb-4 scroll-mt-28' : 'mb-9 scroll-mt-28'">
     <div class="category-bar group/cat">
+      <button
+        type="button"
+        class="p-0.5 -ml-1 rounded text-surface-300 dark:text-surface-600 hover:text-accent-500 transition-colors"
+        :aria-expanded="!collapsed"
+        :aria-label="collapsed ? `展开「${category.name}」` : `折叠「${category.name}」`"
+        :title="collapsed ? '展开' : '折叠'"
+        @click="emit('toggle-collapse')"
+      >
+        <Icon :icon="collapsed ? 'mdi:chevron-right' : 'mdi:chevron-down'" class="text-base" />
+      </button>
       <DynamicIcon :icon="category.icon" class="text-accent-500 dark:text-accent-400 text-base" />
       <a :href="'#' + categoryId" class="text-sm font-semibold text-surface-600 dark:text-surface-300 tracking-wide hover:text-accent-600 dark:hover:text-accent-400 transition-colors">
         {{ category.name }}
@@ -57,7 +83,7 @@ function copyAnchor(id: string) {
         </button>
       </span>
     </div>
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+    <div v-if="!collapsed" :class="containerClass">
       <NavCard
         v-for="(item, idx) in category.items"
         :key="item.url"
@@ -65,6 +91,8 @@ function copyAnchor(id: string) {
         :keyword="keyword"
         :index="idx"
         :category-name="category.name"
+        :layout="viewMode ?? 'grid'"
+        :density="density ?? 'comfortable'"
         :active="activeKey === `${category.name}:${item.url}`"
         @edit="emit('edit', $event)"
         @remove="emit('remove', $event)"
