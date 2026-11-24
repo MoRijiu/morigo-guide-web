@@ -28,8 +28,9 @@ import CommandPalette, { type PaletteEntry } from './components/CommandPalette.v
 import { usePwa } from './composables/usePwa'
 import { useI18n } from './i18n'
 
-const { t } = useI18n()
+const { t, locale, catName, itemDesc } = useI18n()
 import { categoryAnchorId } from './utils/slug'
+import { engineDisplayLabel } from './utils/engineLabel'
 import { buildBackup, downloadBackup } from './utils/dataTransfer'
 import type { NavItem, NavCategory } from './types'
 
@@ -41,6 +42,7 @@ function matches(item: NavItem, k: string): boolean {
   return (
     item.title.toLowerCase().includes(needle) ||
     item.description.toLowerCase().includes(needle) ||
+    (item.descriptionEn ?? '').toLowerCase().includes(needle) ||
     item.url.toLowerCase().includes(needle) ||
     (item.aliases ?? []).some((a) => a.toLowerCase().includes(needle))
   )
@@ -349,10 +351,11 @@ const paletteEntries = computed<PaletteEntry[]>(() => {
         kind: 'site',
         id: `site:${item.url}`,
         title: item.title,
-        hint: item.description,
+        hint: itemDesc(item),
         icon: item.icon,
         item,
         categoryName: cat.name,
+        categoryLabel: catName(cat),
       })
     }
   }
@@ -361,7 +364,7 @@ const paletteEntries = computed<PaletteEntry[]>(() => {
   const categories: PaletteEntry[] = displayCategories.value.map((cat) => ({
     kind: 'category',
     id: `cat:${cat.name}`,
-    title: t('palette.jumpTo', { name: cat.name }),
+    title: t('palette.jumpTo', { name: catName(cat) }),
     hint: t('palette.sitesCount', { n: cat.items.length }),
     icon: cat.icon,
     categoryName: cat.name,
@@ -585,7 +588,7 @@ onBeforeUnmount(() => {
               class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium border border-surface-200 dark:border-surface-700 text-surface-600 dark:text-surface-300 hover:border-accent-400 hover:text-accent-600 dark:hover:text-accent-400 transition-colors"
             >
               <DynamicIcon :icon="engine.icon" class="text-sm" />
-              {{ t('empty.searchWith', { name: engine.label }) }}
+              {{ t('empty.searchWith', { name: engineDisplayLabel(engine, locale, t) }) }}
             </a>
           </div>
         </div>

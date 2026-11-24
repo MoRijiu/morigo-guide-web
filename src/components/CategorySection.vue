@@ -7,7 +7,7 @@ import type { NavCategory } from '../types'
 import NavCard from './NavCard.vue'
 import { useI18n } from '../i18n'
 
-const { t } = useI18n()
+const { t, catName } = useI18n()
 
 const props = defineProps<{
   category: NavCategory
@@ -130,7 +130,7 @@ function copyAnchor(id: string) {
         type="button"
         class="p-0.5 -ml-1 rounded text-surface-300 dark:text-surface-600 hover:text-accent-500 transition-colors"
         :aria-expanded="!collapsed"
-        :aria-label="collapsed ? t('section.expand', { name: category.name }) : t('section.collapse', { name: category.name })"
+        :aria-label="collapsed ? t('section.expand', { name: catName(category) }) : t('section.collapse', { name: catName(category) })"
         :title="collapsed ? t('section.expandShort') : t('section.collapseShort')"
         @click="emit('toggle-collapse')"
       >
@@ -138,7 +138,7 @@ function copyAnchor(id: string) {
       </button>
       <DynamicIcon :icon="category.icon" class="text-accent-500 dark:text-accent-400 text-base" />
       <a :href="'#' + categoryId" class="text-sm font-semibold text-surface-600 dark:text-surface-300 tracking-wide hover:text-accent-600 dark:hover:text-accent-400 transition-colors">
-        {{ category.name }}
+        {{ catName(category) }}
       </a>
       <span class="text-[10px] text-surface-300 dark:text-surface-600 tabular-nums">{{ category.items.length }}</span>
       <span class="ml-auto flex items-center gap-2">

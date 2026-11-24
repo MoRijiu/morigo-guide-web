@@ -1,9 +1,9 @@
 {
   "name": "morigo-guide-web",
   "private": true,
-  "version": "1.24.0",
+  "version": "1.25.0",
   "type": "module",
-  "description": "MoriGo 导航站 - 去发现，去抵达",
+  "description": "MoriGo — an open-source, self-hostable navigation / start page. 去发现，去抵达 · Discover. Arrive.",
   "repository": {
     "type": "git",
     "url": "https://github.com/MoRijiu/morigo-guide-web.git"

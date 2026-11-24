@@ -10,7 +10,7 @@ import { useCustomData } from '../composables/useCustomData'
 import type { NavItem } from '../types'
 import { useI18n } from '../i18n'
 
-const { t } = useI18n()
+const { t, itemDesc } = useI18n()
 
 const props = defineProps<{
   item: NavItem
@@ -155,7 +155,7 @@ async function onCopyLink(e: Event) {
         <Icon v-if="item.hot" icon="mdi:fire" class="inline-block text-[11px] text-orange-400 ml-1 -mt-0.5" :aria-label="t('card.hot')" />
       </h3>
       <p class="text-[11px] text-surface-400 dark:text-surface-500 truncate mt-0.5 leading-tight">
-        <HighlightText :text="item.description" :keyword="keyword" />
+        <HighlightText :text="itemDesc(item)" :keyword="keyword" />
       </p>
     </div>
     <span v-if="layout === 'list' && host" class="hidden md:block shrink-0 self-center text-[11px] text-surface-300 dark:text-surface-600 max-w-[180px] truncate">{{ host }}</span>

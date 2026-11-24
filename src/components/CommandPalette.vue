@@ -16,6 +16,8 @@ export interface PaletteEntry {
   icon: string
   item?: NavItem
   categoryName?: string
+  /** 分类展示名（按语言本地化），仅用于条目右侧标签；categoryName 仍是身份标识 */
+  categoryLabel?: string
   actionId?: string
 }
 
@@ -44,7 +46,7 @@ const results = computed<PaletteEntry[]>(() => {
   for (const entry of props.entries) {
     const fields =
       entry.kind === 'site' && entry.item
-        ? [entry.item.title, entry.item.description, entry.item.url, ...(entry.item.aliases ?? [])]
+        ? [entry.item.title, entry.item.description, entry.item.descriptionEn ?? '', entry.item.url, ...(entry.item.aliases ?? [])]
         : [entry.title, entry.hint]
     const score = fuzzyScoreFields(q, fields)
     if (score >= 0) scored.push({ entry, score: score + (entry.kind === 'site' ? 0 : 50) })
@@ -108,7 +110,7 @@ function onKeydown(e: KeyboardEvent) {
 function kindLabel(entry: PaletteEntry): string {
   if (entry.kind === 'action') return t('palette.kindAction')
   if (entry.kind === 'category') return t('palette.kindCategory')
-  return entry.categoryName ?? t('palette.kindSite')
+  return entry.categoryLabel ?? entry.categoryName ?? t('palette.kindSite')
 }
 </script>
 

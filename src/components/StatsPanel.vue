@@ -5,7 +5,7 @@ import { useUserData } from '../composables/useUserData'
 import type { NavItem, NavCategory } from '../types'
 import { useI18n } from '../i18n'
 
-const { t } = useI18n()
+const { t, catName } = useI18n()
 
 /**
  * 本地访问统计面板：数据全部来自 localStorage 的访问计数，
@@ -45,7 +45,7 @@ const topMax = computed(() => topItems.value[0]?.count ?? 0)
 const categoryStats = computed(() => {
   const rows = props.categories
     .map((cat) => ({
-      name: cat.name,
+      name: catName(cat),
       visits: cat.items.reduce((sum, item) => sum + (visitCounts.value[item.url] ?? 0), 0),
     }))
     .filter((r) => r.visits > 0)
@@ -157,7 +157,7 @@ onBeforeUnmount(() => {
         <p class="px-1 text-[11px] font-medium text-surface-400 dark:text-surface-500 mb-1.5">{{ t('stats.byCategory') }}</p>
         <ul class="mb-3 space-y-1.5 px-1">
           <li v-for="row in categoryStats" :key="row.name" class="flex items-center gap-2">
-            <span class="w-16 shrink-0 truncate text-[11px] text-surface-600 dark:text-surface-300">{{ row.name }}</span>
+            <span class="w-24 shrink-0 truncate text-[11px] text-surface-600 dark:text-surface-300" :title="row.name">{{ row.name }}</span>
             <span class="flex-1 h-1.5 rounded-full bg-surface-100 dark:bg-surface-800 overflow-hidden">
               <span class="block h-full rounded-full bg-accent-400/80" :style="{ width: `${row.width}%` }" />
             </span>

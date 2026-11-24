@@ -5,7 +5,7 @@ import { categoryAnchorId } from '../utils/slug'
 import type { NavCategory } from '../types'
 import { useI18n } from '../i18n'
 
-const { t } = useI18n()
+const { t, catName } = useI18n()
 
 const props = defineProps<{
   categories: NavCategory[]
@@ -60,7 +60,7 @@ function jump(name: string) {
           : 'text-surface-500 dark:text-surface-400 hover:text-surface-700 dark:hover:text-surface-200 hover:bg-surface-100 dark:hover:bg-surface-800'"
       >
         <DynamicIcon :icon="cat.icon" class="text-sm" />
-        {{ cat.name }}
+        {{ catName(cat) }}
         <span class="text-[10px] opacity-70 tabular-nums">{{ cat.items.length }}</span>
       </button>
     </div>
