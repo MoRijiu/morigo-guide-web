@@ -362,7 +362,7 @@ function onAddEngine() {
 
       <div
         v-if="dropdownVisible"
-        class="absolute left-0 right-0 top-full mt-1.5 z-50 rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-900 shadow-lg shadow-surface-900/5 overflow-hidden text-left"
+        class="absolute left-0 right-0 top-full mt-1.5 z-50 rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-900 shadow-lg shadow-surface-900/5 overflow-y-auto max-h-[55dvh] text-left"
         role="listbox"
         :aria-label="t('search.suggestionsAria')"
       >

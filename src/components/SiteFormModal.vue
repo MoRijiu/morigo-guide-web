@@ -100,7 +100,7 @@ function onSubmit() {
   >
     <div class="absolute inset-0 bg-black/40 backdrop-blur-[2px]" @click="emit('close')"></div>
     <form
-      class="relative w-full sm:max-w-md bg-white dark:bg-surface-900 rounded-t-2xl sm:rounded-2xl shadow-xl border border-surface-100 dark:border-surface-800 p-5"
+      class="relative w-full sm:max-w-md max-h-[92dvh] overflow-y-auto bg-white dark:bg-surface-900 rounded-t-2xl sm:rounded-2xl shadow-xl border border-surface-100 dark:border-surface-800 p-5"
       @submit.prevent="onSubmit"
       @keydown.esc="emit('close')"
     >
