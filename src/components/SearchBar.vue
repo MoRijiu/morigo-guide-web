@@ -231,14 +231,14 @@ function onAddEngine() {
 
 <template>
   <div class="max-w-xl mx-auto">
-    <div class="flex items-center gap-1 mb-2.5 px-1" role="tablist" aria-label="搜索引擎切换">
+    <div class="flex items-center gap-1 mb-2.5 px-1 overflow-x-auto whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="tablist" aria-label="搜索引擎切换">
       <button
         v-for="engine in engines"
         :key="engine.key"
         role="tab"
         :aria-selected="activeEngine === engine.key"
         @click="switchEngine(engine.key)"
-        class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-150"
+        class="flex shrink-0 items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-150"
         :class="activeEngine === engine.key
           ? 'bg-accent-600 text-white dark:bg-accent-500'
           : 'text-surface-400 hover:text-surface-600 dark:hover:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800'"
@@ -248,7 +248,7 @@ function onAddEngine() {
       </button>
       <button
         type="button"
-        class="flex items-center gap-1 px-2 py-1.5 rounded-md text-xs text-surface-400 hover:text-accent-600 dark:hover:text-accent-400 hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors"
+        class="flex shrink-0 items-center gap-1 px-2 py-1.5 rounded-md text-xs text-surface-400 hover:text-accent-600 dark:hover:text-accent-400 hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors"
         :aria-expanded="managerOpen"
         title="管理搜索引擎"
         @click="managerOpen = !managerOpen"
@@ -353,7 +353,7 @@ function onAddEngine() {
 
       <div
         v-if="dropdownVisible"
-        class="absolute left-0 right-0 top-full mt-1.5 z-30 rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-900 shadow-lg shadow-surface-900/5 overflow-hidden text-left"
+        class="absolute left-0 right-0 top-full mt-1.5 z-50 rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-900 shadow-lg shadow-surface-900/5 overflow-hidden text-left"
         role="listbox"
         aria-label="搜索建议"
       >
