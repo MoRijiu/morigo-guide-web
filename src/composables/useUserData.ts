@@ -54,5 +54,18 @@ export function useUserData() {
     save(RECENT_KEY, recent.value)
   }
 
-  return { favorites, recent, isFavorite, toggleFavorite, recordVisit, clearRecent }
+  /** 导入收藏/最近访问：merge 去重合并；replace 整表替换 */
+  function importUserData(favs: string[], rec: string[], mode: 'merge' | 'replace') {
+    if (mode === 'replace') {
+      favorites.value = [...favs]
+      recent.value = [...rec].slice(0, RECENT_MAX)
+    } else {
+      favorites.value = [...favs.filter((u) => !favorites.value.includes(u)), ...favorites.value]
+      recent.value = [...rec.filter((u) => !recent.value.includes(u)), ...recent.value].slice(0, RECENT_MAX)
+    }
+    save(FAV_KEY, favorites.value)
+    save(RECENT_KEY, recent.value)
+  }
+
+  return { favorites, recent, isFavorite, toggleFavorite, recordVisit, clearRecent, importUserData }
 }
