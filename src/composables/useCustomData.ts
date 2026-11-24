@@ -66,7 +66,7 @@ export function useCustomData() {
     )
   }
 
-  function addItem(categoryName: string, item: NavItem) {
+  function addItem(categoryName: string, item: NavItem, categoryIcon?: string) {
     const name = categoryName.trim()
     const existing = customCategories.value.find((c) => c.name === name)
     if (existing) {
@@ -75,9 +75,18 @@ export function useCustomData() {
     } else {
       customCategories.value = [
         ...customCategories.value,
-        { name, icon: 'mdi:folder-outline', items: [item] },
+        { name, icon: categoryIcon || 'mdi:folder-outline', items: [item] },
       ]
     }
+    save()
+  }
+
+  /** 更换某个自定义分类的图标（分类不存在时静默忽略） */
+  function setCategoryIcon(categoryName: string, icon: string) {
+    const cat = customCategories.value.find((c) => c.name === categoryName)
+    if (!cat || !icon) return
+    cat.icon = icon
+    customCategories.value = [...customCategories.value]
     save()
   }
 
@@ -85,10 +94,17 @@ export function useCustomData() {
     oldCategoryName: string,
     oldUrl: string,
     newCategoryName: string,
-    item: NavItem
+    item: NavItem,
+    categoryIcon?: string
   ) {
+    // 同分类编辑时保留原分类图标（removeItem 可能把空分类删掉，重建时别丢图标）
+    const preserved =
+      categoryIcon ??
+      (newCategoryName.trim() === oldCategoryName
+        ? customCategories.value.find((c) => c.name === oldCategoryName)?.icon
+        : undefined)
     removeItem(oldCategoryName, oldUrl, false)
-    addItem(newCategoryName, item)
+    addItem(newCategoryName, item, preserved)
   }
 
   function removeItem(categoryName: string, url: string, persist = true) {
@@ -138,5 +154,5 @@ export function useCustomData() {
     save()
   }
 
-  return { customCategories, isCustomItem, addItem, updateItem, removeItem, importCategories, setCustomOrder }
+  return { customCategories, isCustomItem, addItem, updateItem, removeItem, importCategories, setCustomOrder, setCategoryIcon }
 }

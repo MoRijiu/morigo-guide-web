@@ -1,7 +1,7 @@
 {
   "name": "morigo-guide-web",
   "private": true,
-  "version": "1.27.0",
+  "version": "1.28.0",
   "type": "module",
   "description": "MoriGo — an open-source, self-hostable navigation / start page. 去发现，去抵达 · Discover. Arrive.",
   "repository": {
