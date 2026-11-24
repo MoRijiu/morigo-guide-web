@@ -33,6 +33,7 @@ export const BACKGROUNDS: BgDef[] = [
   { id: 'sunset', label: '晚霞' },
   { id: 'forest', label: '森林' },
   { id: 'aurora', label: '极光' },
+  { id: 'custom', label: '自定义图片' },
 ]
 
 const KEY = 'morigo:theme-prefs'
@@ -41,10 +42,17 @@ interface ThemePrefs {
   accent: string
   bg: string
   glass: boolean
+  /** 自定义图片背景的淡化强度 0–70（%）：越大图片越淡、内容越易读 */
+  bgDim: number
+}
+
+function clampDim(v: unknown): number {
+  const n = typeof v === 'number' && Number.isFinite(v) ? Math.round(v) : 35
+  return Math.min(70, Math.max(0, n))
 }
 
 function load(): ThemePrefs {
-  const fallback: ThemePrefs = { accent: 'violet', bg: 'none', glass: false }
+  const fallback: ThemePrefs = { accent: 'violet', bg: 'none', glass: false, bgDim: 35 }
   try {
     const raw = localStorage.getItem(KEY)
     if (!raw) return fallback
@@ -54,6 +62,7 @@ function load(): ThemePrefs {
       accent: ACCENTS.some((a) => a.id === p.accent) ? (p.accent as string) : 'violet',
       bg: BACKGROUNDS.some((b) => b.id === p.bg) ? (p.bg as string) : 'none',
       glass: p.glass === true,
+      bgDim: clampDim(p.bgDim),
     }
   } catch {
     return fallback
@@ -64,6 +73,7 @@ const initial = load()
 const accent = ref(initial.accent)
 const bg = ref(initial.bg)
 const glass = ref(initial.glass)
+const bgDim = ref(initial.bgDim)
 
 function apply() {
   if (typeof document === 'undefined') return
@@ -71,13 +81,15 @@ function apply() {
   el.dataset.accent = accent.value
   el.dataset.bg = bg.value
   el.dataset.glass = glass.value ? 'true' : 'false'
+  // 自定义图片层的不透明度 = 1 - 淡化强度
+  el.style.setProperty('--bg-image-opacity', String(1 - bgDim.value / 100))
 }
 
 function save() {
   try {
     localStorage.setItem(
       KEY,
-      JSON.stringify({ accent: accent.value, bg: bg.value, glass: glass.value })
+      JSON.stringify({ accent: accent.value, bg: bg.value, glass: glass.value, bgDim: bgDim.value })
     )
   } catch {
     // 隐私模式等存储不可用时仅内存态生效
@@ -117,5 +129,11 @@ export function useThemePrefs() {
     save()
   }
 
-  return { accent, bg, glass, setAccent, cycleAccent, setBg, setGlass }
+  function setBgDim(v: number) {
+    bgDim.value = clampDim(v)
+    apply()
+    save()
+  }
+
+  return { accent, bg, glass, bgDim, setAccent, cycleAccent, setBg, setGlass, setBgDim }
 }

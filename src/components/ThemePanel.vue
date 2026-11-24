@@ -2,14 +2,59 @@
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useThemePrefs, ACCENTS, BACKGROUNDS } from '../composables/useThemePrefs'
+import { useCustomBg, compressImage } from '../composables/useCustomBg'
 import { useI18n } from '../i18n'
 
 const { t } = useI18n()
 
-const { accent, bg, glass, setAccent, setBg, setGlass } = useThemePrefs()
+const { accent, bg, glass, bgDim, setAccent, setBg, setGlass, setBgDim } = useThemePrefs()
+const { customBgUrl, setCustomBg, clearCustomBg } = useCustomBg()
 
 const open = ref(false)
 const rootEl = ref<HTMLElement | null>(null)
+const fileInput = ref<HTMLInputElement | null>(null)
+const bgError = ref('')
+
+function onBgClick(id: string) {
+  // 选「自定义」但还没图时直接拉起文件选择，避免选中一个空背景
+  if (id === 'custom' && !customBgUrl.value) {
+    fileInput.value?.click()
+    return
+  }
+  setBg(id)
+}
+
+async function onFileChange(e: Event) {
+  const input = e.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = ''
+  if (!file) return
+  bgError.value = ''
+  if (!file.type.startsWith('image/')) {
+    bgError.value = t('theme.bgErrorType')
+    return
+  }
+  if (file.size > 10 * 1024 * 1024) {
+    bgError.value = t('theme.bgErrorSize')
+    return
+  }
+  try {
+    const dataUrl = await compressImage(file)
+    const saved = await setCustomBg(dataUrl)
+    if (!saved) {
+      bgError.value = t('theme.bgErrorSave')
+      return
+    }
+    setBg('custom')
+  } catch {
+    bgError.value = t('theme.bgErrorType')
+  }
+}
+
+async function onRemoveBg() {
+  await clearCustomBg()
+  if (bg.value === 'custom') setBg('none')
+}
 
 function onDocClick(e: MouseEvent) {
   if (open.value && rootEl.value && !rootEl.value.contains(e.target as Node)) {
@@ -80,8 +125,56 @@ onBeforeUnmount(() => {
           :class="bg === b.id
             ? 'border-accent-500 text-accent-600 dark:text-accent-400 bg-accent-50 dark:bg-accent-500/10'
             : 'border-surface-200 dark:border-surface-700 text-surface-500 dark:text-surface-400 hover:border-accent-300'"
-          @click="setBg(b.id)"
+          @click="onBgClick(b.id)"
         >{{ t('bg.' + b.id) }}</button>
+      </div>
+
+      <div class="px-1 mb-3">
+        <p class="text-[11px] font-medium text-surface-400 dark:text-surface-500 mb-1.5">{{ t('theme.customBg') }}</p>
+        <div v-if="customBgUrl" class="flex items-center gap-2 mb-2">
+          <img
+            :src="customBgUrl"
+            :alt="t('theme.bgPreview')"
+            class="w-14 h-9 rounded-md object-cover border border-surface-200 dark:border-surface-700"
+          />
+          <button
+            type="button"
+            class="px-2 py-1 rounded-md text-[11px] border border-surface-200 dark:border-surface-700 text-surface-500 dark:text-surface-400 hover:border-accent-300 transition-colors"
+            @click="fileInput?.click()"
+          >
+            <Icon icon="mdi:image-outline" class="inline text-xs -mt-px" /> {{ t('theme.replaceBg') }}
+          </button>
+          <button
+            type="button"
+            class="px-2 py-1 rounded-md text-[11px] border border-surface-200 dark:border-surface-700 text-surface-500 dark:text-surface-400 hover:border-red-300 hover:text-red-500 transition-colors"
+            @click="onRemoveBg"
+          >{{ t('theme.removeBg') }}</button>
+        </div>
+        <button
+          v-else
+          type="button"
+          class="w-full px-2 py-1.5 rounded-md text-[11px] border border-dashed border-surface-300 dark:border-surface-600 text-surface-500 dark:text-surface-400 hover:border-accent-400 hover:text-accent-600 dark:hover:text-accent-400 transition-colors"
+          @click="fileInput?.click()"
+        >
+          <Icon icon="mdi:upload" class="inline text-xs -mt-px" /> {{ t('theme.uploadBg') }}
+        </button>
+        <input ref="fileInput" type="file" accept="image/*" class="hidden" @change="onFileChange" />
+        <div v-if="customBgUrl" class="flex items-center gap-2 mt-2">
+          <span class="text-[11px] text-surface-500 dark:text-surface-400 shrink-0">{{ t('theme.bgDim') }}</span>
+          <input
+            type="range"
+            min="0"
+            max="70"
+            step="5"
+            :value="bgDim"
+            class="w-full accent-accent-500 h-1"
+            :aria-label="t('theme.bgDim')"
+            @input="setBgDim(Number(($event.target as HTMLInputElement).value))"
+          />
+          <span class="text-[11px] text-surface-400 w-8 text-right">{{ bgDim }}%</span>
+        </div>
+        <p v-if="bgError" class="mt-1.5 text-[11px] text-red-500" role="alert">{{ bgError }}</p>
+        <p class="mt-1.5 text-[11px] text-surface-300 dark:text-surface-600">{{ t('theme.bgHint') }}</p>
       </div>
 
       <button

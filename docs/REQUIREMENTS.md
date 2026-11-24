@@ -48,6 +48,7 @@ MoriGo 是一个开源、可自部署的网址导航站（生产：go.morijiu.cn
 | R21 | 小组件区 | 工具栏下方可开关组件带：时钟/日期（秒级刷新、随语言本地化）、每日一言（本地中/英各 14 条语录库、按日期取每日一句、可手动换一句，零外网请求）、倒计时（目标日期+名称可编辑、默认下一个元旦、天数按本地日历日计算）；开关与倒计时目标存 localStorage `morigo:widgets`；命令面板加「小组件设置」动作；毛玻璃开启时组件卡同步生效 |
 | R22 | 链接体检 | 构建期脚本 `scripts/check-links.mjs`（`npm run check:links`）检查默认导航数据全部链接可达性：HEAD 优先、405/501 或失败时 GET 复核、并发 5、超时 10s；结果分可达/存疑（401/403/429，多为站点拦截脚本）/失效三档，生成报告 `docs/LINK-CHECK.md`；`--strict` 有失效链接时退出 1 可挂 CI，`--no-report` 只打控制台；纯构建期工具、不做运行时探测 |
 | R23 | 数据扩充 | 默认导航数据从 5 分类 22 站点扩充到 9 分类 51 站点：新增「AI 工具」（Claude/Gemini/DeepSeek/Perplexity/通义千问/Hugging Face/Poe）、「云服务」（AWS/Google Cloud/Azure/阿里云/Cloudflare/Supabase）、「效率工具」（Notion/Obsidian/DeepL/Canva/Todoist/Google Drive）、「影音娱乐」（YouTube/Netflix/Spotify/Twitch/豆瓣/小红书/Steam/网易云音乐）四个分类，学习资源补 Wikipedia/Coursera；全部条目带中文/拼音别名，图标经 scripts/gen-icons.mjs 本地注册（78→111），新增链接经 R22 体检脚本复核 |
+| R24 | 自定义图片背景 | 主题面板新增「自定义图片背景」（R15 主题系统的后续增强）：上传本地图片（类型/10MB 校验）经 canvas 压到最长边 1920px JPEG 存 IndexedDB（`morigo-db`，不走 localStorage、不上传服务器），作为背景预设「自定义」与渐变预设并列；fixed 伪元素层 cover 展示，淡化强度 0–70% 可调（存主题偏好 `bgDim`）保证内容可读性；面板内可预览/更换/删除，无图时点「自定义」直接拉起文件选择；与毛玻璃开关可叠加 |
 
 ### 2.3 非目标
 
