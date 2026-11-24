@@ -2,15 +2,14 @@
 import { computed } from 'vue'
 import { Icon } from '@iconify/vue'
 import DynamicIcon from './DynamicIcon.vue'
+import HighlightText from './HighlightText.vue'
+import { toSlug } from '../utils/slug'
 import type { NavItem } from '../types'
 
 const props = defineProps<{
   item: NavItem
+  keyword?: string
 }>()
-
-function toSlug(str: string) {
-  return str.replace(/[\s&\/]+/g, '-').replace(/[^\w\u4e00-\u9fa5-]/g, '').toLowerCase()
-}
 
 const itemId = computed(() => `nav-${toSlug(props.item.title)}`)
 </script>
@@ -22,10 +21,10 @@ const itemId = computed(() => `nav-${toSlug(props.item.title)}`)
     </div>
     <div class="min-w-0 flex-1">
       <h3 class="text-[13px] font-medium text-surface-700 dark:text-surface-200 truncate group-hover:text-accent-600 dark:group-hover:text-accent-400 transition-colors duration-200">
-        {{ item.title }}
+        <HighlightText :text="item.title" :keyword="keyword" />
       </h3>
       <p class="text-[11px] text-surface-400 dark:text-surface-500 truncate mt-0.5 leading-tight">
-        {{ item.description }}
+        <HighlightText :text="item.description" :keyword="keyword" />
       </p>
     </div>
     <Icon icon="mdi:open-in-new" class="text-sm text-surface-200 dark:text-surface-700 group-hover:text-accent-400 dark:group-hover:text-accent-500 transition-colors shrink-0 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-200" />
