@@ -38,7 +38,7 @@ export function downloadBackup(backup: MorigoBackup) {
   URL.revokeObjectURL(url)
 }
 
-function sanitizeCategories(input: unknown): NavCategory[] {
+export function sanitizeCategories(input: unknown): NavCategory[] {
   if (!Array.isArray(input)) return []
   const out: NavCategory[] = []
   for (const c of input) {
@@ -73,7 +73,7 @@ function sanitizeCategories(input: unknown): NavCategory[] {
   return out
 }
 
-function sanitizeUrls(input: unknown): string[] {
+export function sanitizeUrls(input: unknown): string[] {
   if (!Array.isArray(input)) return []
   const seen = new Set<string>()
   const out: string[] = []

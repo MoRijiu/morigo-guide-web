@@ -18,6 +18,8 @@ import SiteFormModal from './components/SiteFormModal.vue'
 import DataTransfer from './components/DataTransfer.vue'
 import ThemePanel from './components/ThemePanel.vue'
 import StatsPanel from './components/StatsPanel.vue'
+import ShareImportModal from './components/ShareImportModal.vue'
+import { parseShareHash, type SharePayload } from './utils/share'
 import { useThemePrefs } from './composables/useThemePrefs'
 import CommandPalette, { type PaletteEntry } from './components/CommandPalette.vue'
 import { usePwa } from './composables/usePwa'
@@ -38,7 +40,7 @@ function matches(item: NavItem, k: string): boolean {
   )
 }
 
-const { customCategories, addItem, updateItem, removeItem } = useCustomData()
+const { customCategories, addItem, updateItem, removeItem, importCategories } = useCustomData()
 const customCategoriesRef = customCategories
 
 /**
@@ -72,7 +74,22 @@ const resultCount = computed(() =>
   filteredCategories.value.reduce((sum, cat) => sum + cat.items.length, 0)
 )
 
-const { favorites, recent, clearRecent, recordVisit } = useUserData()
+const { favorites, recent, clearRecent, recordVisit, importUserData } = useUserData()
+
+// ==================== 分享链接导入 ====================
+const sharePayload = ref<SharePayload | null>(null)
+
+function clearShareHash() {
+  sharePayload.value = null
+  history.replaceState(null, '', window.location.pathname + window.location.search)
+}
+
+function onShareImport() {
+  if (!sharePayload.value) return
+  importCategories(sharePayload.value.customCategories, 'merge')
+  importUserData(sharePayload.value.favorites, [], 'merge')
+  clearShareHash()
+}
 
 // ==================== 视图与布局 ====================
 const { view, density, setView, setDensity, isCollapsed, toggleCollapsed, setAllCollapsed } =
@@ -289,6 +306,7 @@ const paletteEntries = computed<PaletteEntry[]>(() => {
     { kind: 'action', id: 'action:view', title: '切换网格 / 列表视图', icon: 'mdi:view-grid-outline', actionId: 'toggle-view' },
     { kind: 'action', id: 'action:accent', title: '切换强调色', hint: '紫罗兰 / 湖蓝 / 晴空 / 翠绿 / 琥珀 / 玫红', icon: 'mdi:palette-outline', actionId: 'cycle-accent' },
     { kind: 'action', id: 'action:stats', title: '查看访问统计', hint: '本地访问 Top 与分类占比', icon: 'mdi:chart-bar', actionId: 'open-stats' },
+    { kind: 'action', id: 'action:share', title: '生成分享链接', hint: '把自定义站点与收藏打包进链接', icon: 'mdi:share-variant', actionId: 'open-share' },
     ...(canInstall.value
       ? [{ kind: 'action', id: 'action:install', title: '安装应用（PWA）', hint: '装到桌面/主屏幕，离线可用', icon: 'mdi:download', actionId: 'install-app' } as PaletteEntry]
       : []),
@@ -364,14 +382,28 @@ async function onPalettePick(entry: PaletteEntry) {
       cycleAccent()
     } else if (entry.actionId === 'open-stats') {
       window.dispatchEvent(new Event('morigo:open-stats'))
+    } else if (entry.actionId === 'open-share') {
+      window.dispatchEvent(new Event('morigo:open-share'))
     } else if (entry.actionId === 'install-app') {
       void promptInstall()
     }
   }
 }
 
-onMounted(() => window.addEventListener('keydown', onGlobalKeydown, true))
-onBeforeUnmount(() => window.removeEventListener('keydown', onGlobalKeydown, true))
+function onHashChange() {
+  const payload = parseShareHash(window.location.hash)
+  if (payload) sharePayload.value = payload
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', onGlobalKeydown, true)
+  window.addEventListener('hashchange', onHashChange)
+  sharePayload.value = parseShareHash(window.location.hash)
+})
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onGlobalKeydown, true)
+  window.removeEventListener('hashchange', onHashChange)
+})
 </script>
 
 <template>
@@ -584,5 +616,6 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onGlobalKeydown, tru
       @save="onFormSave"
       @close="formOpen = false"
     />
+    <ShareImportModal :payload="sharePayload" @import="onShareImport" @close="clearShareHash" />
   </div>
 </template>
