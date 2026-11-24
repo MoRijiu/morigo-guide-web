@@ -17,6 +17,7 @@ import { useSearchExtras, buildSearchUrl } from './composables/useSearchExtras'
 import SiteFormModal from './components/SiteFormModal.vue'
 import DataTransfer from './components/DataTransfer.vue'
 import ThemePanel from './components/ThemePanel.vue'
+import StatsPanel from './components/StatsPanel.vue'
 import { useThemePrefs } from './composables/useThemePrefs'
 import CommandPalette, { type PaletteEntry } from './components/CommandPalette.vue'
 import { usePwa } from './composables/usePwa'
@@ -287,6 +288,7 @@ const paletteEntries = computed<PaletteEntry[]>(() => {
     { kind: 'action', id: 'action:top', title: '回到顶部', icon: 'mdi:arrow-up', actionId: 'back-to-top' },
     { kind: 'action', id: 'action:view', title: '切换网格 / 列表视图', icon: 'mdi:view-grid-outline', actionId: 'toggle-view' },
     { kind: 'action', id: 'action:accent', title: '切换强调色', hint: '紫罗兰 / 湖蓝 / 晴空 / 翠绿 / 琥珀 / 玫红', icon: 'mdi:palette-outline', actionId: 'cycle-accent' },
+    { kind: 'action', id: 'action:stats', title: '查看访问统计', hint: '本地访问 Top 与分类占比', icon: 'mdi:chart-bar', actionId: 'open-stats' },
     ...(canInstall.value
       ? [{ kind: 'action', id: 'action:install', title: '安装应用（PWA）', hint: '装到桌面/主屏幕，离线可用', icon: 'mdi:download', actionId: 'install-app' } as PaletteEntry]
       : []),
@@ -360,6 +362,8 @@ async function onPalettePick(entry: PaletteEntry) {
       setView(view.value === 'grid' ? 'list' : 'grid')
     } else if (entry.actionId === 'cycle-accent') {
       cycleAccent()
+    } else if (entry.actionId === 'open-stats') {
+      window.dispatchEvent(new Event('morigo:open-stats'))
     } else if (entry.actionId === 'install-app') {
       void promptInstall()
     }
@@ -419,6 +423,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onGlobalKeydown, tru
         </button>
         <DataTransfer />
         <ThemePanel />
+        <StatsPanel :items="allItems" :categories="mergedCategories" :favorites-count="favorites.length" @open-item="onOpenItem" />
         <span class="hidden sm:block w-px h-4 bg-surface-200 dark:bg-surface-700" aria-hidden="true" />
         <div class="flex items-center rounded-md border border-surface-200 dark:border-surface-700 overflow-hidden" role="group" aria-label="视图切换">
           <button
