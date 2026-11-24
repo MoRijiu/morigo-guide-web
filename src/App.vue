@@ -78,6 +78,10 @@ const externalEngines = computed(() =>
   siteConfig.search.engines.filter((e) => e.key !== 'site' && e.url)
 )
 
+const totalCount = computed(
+  () => siteConfig.navigation.reduce((sum, cat) => sum + cat.items.length, 0)
+)
+
 const hotItems = computed<NavItem[]>(() =>
   siteConfig.navigation.flatMap((cat) => cat.items).filter((item) => item.hot)
 )
@@ -91,12 +95,12 @@ function onSearch(val: string) {
   <div class="min-h-screen flex flex-col bg-surface-50 dark:bg-surface-950">
     <NavHeader />
 
-    <div class="pt-12 pb-8 px-5 text-center">
+    <div class="pt-9 pb-6 px-5 text-center">
       <h2 class="font-display text-2xl sm:text-3xl font-bold tracking-tight text-surface-800 dark:text-surface-100 mb-1.5 flex items-center justify-center gap-2">
         <DynamicIcon :icon="siteConfig.logoIcon" class="text-accent-500 dark:text-accent-400" />
         {{ siteConfig.title }}<span class="text-accent-600 dark:text-accent-400">{{ siteConfig.titleHighlight }}</span>
       </h2>
-      <p class="text-surface-400 dark:text-surface-500 text-xs mb-7">{{ siteConfig.tagline }}</p>
+      <p class="text-surface-400 dark:text-surface-500 text-xs mb-5">{{ siteConfig.tagline }} · 共 {{ totalCount }} 个站点</p>
       <SearchBar v-if="siteConfig.search.enabled" @search="onSearch" />
     </div>
 
@@ -146,7 +150,7 @@ function onSearch(val: string) {
             热门推荐
           </p>
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-            <NavCard v-for="item in hotItems" :key="item.url" :item="item" />
+            <NavCard v-for="(item, idx) in hotItems" :key="item.url" :item="item" :index="idx" />
           </div>
         </div>
       </div>
