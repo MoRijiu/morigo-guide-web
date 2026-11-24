@@ -2,6 +2,57 @@ import type { NavCategory } from '../types'
 
 export const mockNavigation: NavCategory[] = [
   {
+    name: '我的产品',
+    icon: 'mdi:apps',
+    items: [
+      {
+        title: 'morijiu 博客',
+        description: '技术文章与每日 AI 新闻早报',
+        url: 'https://blog.morijiu.cn',
+        icon: 'mdi:newspaper',
+        aliases: ['boke', 'blog', '博客', '早报', 'ai新闻'],
+        hot: true,
+      },
+      {
+        title: 'morijiu 通行证',
+        description: '全线产品统一登录认证中心',
+        url: 'https://auth.morijiu.cn',
+        icon: 'mdi:key-variant',
+        aliases: ['tongxingzheng', 'auth', '通行证', '登录'],
+        hot: true,
+      },
+      {
+        title: '无敌刷题',
+        description: '自创题、分享题库、考试与练题',
+        url: 'https://wudi.morijiu.cn',
+        icon: 'mdi:lead-pencil',
+        aliases: ['wudi', 'shuati', '刷题', '题库', '考试'],
+        hot: true,
+      },
+      {
+        title: '墨记小说',
+        description: '安静读小说的在线阅读器',
+        url: 'https://novel.morijiu.cn',
+        icon: 'mdi:book-open-variant',
+        aliases: ['moji', 'xiaoshuo', '小说', '阅读', 'novel'],
+      },
+      {
+        title: '专属远程服务',
+        description: 'RustDesk 托管服务 · 卡密激活续期',
+        url: 'https://desk.morijiu.cn',
+        icon: 'mdi:remote-desktop',
+        aliases: ['rustdesk', 'desk', '远程', '远程桌面'],
+      },
+      {
+        title: 'morijiu 主站',
+        description: 'morijiu.cn 个人主页',
+        url: 'https://www.morijiu.cn',
+        icon: 'mdi:home',
+        aliases: ['zhuzhan', '主站', '主页', 'home'],
+      },
+    ],
+  },
+  {
     name: '常用工具',
     icon: 'mdi:tools',
     items: [
