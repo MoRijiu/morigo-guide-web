@@ -19,6 +19,9 @@ import DataTransfer from './components/DataTransfer.vue'
 import ThemePanel from './components/ThemePanel.vue'
 import StatsPanel from './components/StatsPanel.vue'
 import ShareImportModal from './components/ShareImportModal.vue'
+import WidgetBar from './components/WidgetBar.vue'
+import WidgetsPanel from './components/WidgetsPanel.vue'
+import { useWidgets } from './composables/useWidgets'
 import { parseShareHash, type SharePayload } from './utils/share'
 import { useThemePrefs } from './composables/useThemePrefs'
 import CommandPalette, { type PaletteEntry } from './components/CommandPalette.vue'
@@ -162,6 +165,7 @@ const displayCategories = computed<NavCategory[]>(() =>
 )
 
 const { canInstall, isOnline, promptInstall } = usePwa()
+const { anyEnabled: widgetsAnyEnabled } = useWidgets()
 
 const { customEngines, suggestionsOpen } = useSearchExtras()
 const { cycleAccent } = useThemePrefs()
@@ -330,6 +334,7 @@ const paletteEntries = computed<PaletteEntry[]>(() => {
     { kind: 'action', id: 'action:accent', title: t('action.accent'), hint: t('action.accentHint'), icon: 'mdi:palette-outline', actionId: 'cycle-accent' },
     { kind: 'action', id: 'action:stats', title: t('action.stats'), hint: t('action.statsHint'), icon: 'mdi:chart-bar', actionId: 'open-stats' },
     { kind: 'action', id: 'action:share', title: t('action.share'), hint: t('action.shareHint'), icon: 'mdi:share-variant', actionId: 'open-share' },
+    { kind: 'action', id: 'action:widgets', title: t('action.widgets'), hint: t('action.widgetsHint'), icon: 'mdi:view-dashboard-outline', actionId: 'open-widgets' },
     ...(canInstall.value
       ? [{ kind: 'action', id: 'action:install', title: t('action.install'), hint: t('action.installHint'), icon: 'mdi:download', actionId: 'install-app' } as PaletteEntry]
       : []),
@@ -407,6 +412,8 @@ async function onPalettePick(entry: PaletteEntry) {
       window.dispatchEvent(new Event('morigo:open-stats'))
     } else if (entry.actionId === 'open-share') {
       window.dispatchEvent(new Event('morigo:open-share'))
+    } else if (entry.actionId === 'open-widgets') {
+      window.dispatchEvent(new Event('morigo:open-widgets'))
     } else if (entry.actionId === 'install-app') {
       void promptInstall()
     }
@@ -448,6 +455,7 @@ onBeforeUnmount(() => {
     </div>
 
     <main id="main-content" class="flex-1 max-w-6xl w-full mx-auto px-5 sm:px-8 pb-14">
+      <WidgetBar v-if="!trimmedKeyword && widgetsAnyEnabled()" />
       <div v-if="!trimmedKeyword" class="flex flex-wrap items-center justify-end gap-x-3 gap-y-2 mb-3 -mt-1">
         <span class="hidden sm:inline text-[11px] text-surface-300 dark:text-surface-600">{{ t('app.customHint') }}</span>
         <button
@@ -478,6 +486,7 @@ onBeforeUnmount(() => {
         </button>
         <DataTransfer />
         <ThemePanel />
+        <WidgetsPanel />
         <StatsPanel :items="allItems" :categories="mergedCategories" :favorites-count="favorites.length" @open-item="onOpenItem" />
         <span class="hidden sm:block w-px h-4 bg-surface-200 dark:bg-surface-700" aria-hidden="true" />
         <div class="flex items-center rounded-md border border-surface-200 dark:border-surface-700 overflow-hidden" role="group" :aria-label="t('view.group')">
