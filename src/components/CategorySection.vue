@@ -15,7 +15,13 @@ const props = defineProps<{
   activeKey?: string
 }>()
 
-const emit = defineEmits<{ clear: [] }>()
+const emit = defineEmits<{
+  clear: []
+  edit: [payload: { categoryName: string; item: NavItem }]
+  remove: [payload: { categoryName: string; item: NavItem }]
+}>()
+
+import type { NavItem } from '../types'
 
 const categoryId = computed(() => categoryAnchorId(props.category.name))
 
@@ -58,7 +64,10 @@ function copyAnchor(id: string) {
         :item="item"
         :keyword="keyword"
         :index="idx"
+        :category-name="category.name"
         :active="activeKey === `${category.name}:${item.url}`"
+        @edit="emit('edit', $event)"
+        @remove="emit('remove', $event)"
       />
     </div>
   </section>

@@ -11,6 +11,8 @@ import BackToTop from './components/BackToTop.vue'
 import siteConfig from './config/site'
 import { APP_VERSION_LABEL } from './version'
 import { useUserData } from './composables/useUserData'
+import { useCustomData } from './composables/useCustomData'
+import SiteFormModal from './components/SiteFormModal.vue'
 import type { NavItem, NavCategory } from './types'
 
 const keyword = ref('')
@@ -26,8 +28,25 @@ function matches(item: NavItem, k: string): boolean {
   )
 }
 
+const { customCategories, addItem, updateItem, removeItem } = useCustomData()
+
+/**
+ * 展示用全量分类：自定义分类并入——同名分类追加到默认分类末尾，
+ * 新分类排在默认分类之前（紧随个人分组），让用户自己的东西先被看到。
+ */
+const mergedCategories = computed<NavCategory[]>(() => {
+  const defaults = siteConfig.navigation.map((c) => ({ ...c, items: [...c.items] }))
+  const own: NavCategory[] = []
+  for (const cat of customCategories.value) {
+    const target = defaults.find((c) => c.name === cat.name)
+    if (target) target.items = [...target.items, ...cat.items]
+    else own.push({ ...cat, items: [...cat.items] })
+  }
+  return [...own, ...defaults]
+})
+
 const filteredCategories = computed(() => {
-  const data = siteConfig.navigation
+  const data = mergedCategories.value
   if (!trimmedKeyword.value) return data
 
   return data
@@ -46,7 +65,7 @@ const { favorites, recent, clearRecent, recordVisit } = useUserData()
 
 const itemByUrl = computed(() => {
   const map = new Map<string, NavItem>()
-  for (const cat of siteConfig.navigation) {
+  for (const cat of mergedCategories.value) {
     for (const item of cat.items) map.set(item.url, item)
   }
   return map
@@ -79,12 +98,48 @@ const externalEngines = computed(() =>
 )
 
 const totalCount = computed(
-  () => siteConfig.navigation.reduce((sum, cat) => sum + cat.items.length, 0)
+  () => mergedCategories.value.reduce((sum, cat) => sum + cat.items.length, 0)
 )
 
 const hotItems = computed<NavItem[]>(() =>
-  siteConfig.navigation.flatMap((cat) => cat.items).filter((item) => item.hot)
+  mergedCategories.value.flatMap((cat) => cat.items).filter((item) => item.hot)
 )
+
+// ==================== 自定义站点 ====================
+const formOpen = ref(false)
+const formInitial = ref<{ categoryName: string; item: NavItem } | null>(null)
+
+const allCategoryNames = computed(() => mergedCategories.value.map((c) => c.name))
+
+function openAddForm() {
+  formInitial.value = null
+  formOpen.value = true
+}
+
+function openEditForm(payload: { categoryName: string; item: NavItem }) {
+  formInitial.value = payload
+  formOpen.value = true
+}
+
+function onFormSave(payload: { categoryName: string; item: NavItem }) {
+  if (formInitial.value) {
+    updateItem(
+      formInitial.value.categoryName,
+      formInitial.value.item.url,
+      payload.categoryName,
+      payload.item
+    )
+  } else {
+    addItem(payload.categoryName, payload.item)
+  }
+  formOpen.value = false
+}
+
+function onRemoveItem(payload: { categoryName: string; item: NavItem }) {
+  if (window.confirm(`删除站点「${payload.item.title}」？`)) {
+    removeItem(payload.categoryName, payload.item.url)
+  }
+}
 
 function onSearch(val: string) {
   keyword.value = val
@@ -178,6 +233,17 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onGlobalKeydown, tru
     </div>
 
     <main id="main-content" class="flex-1 max-w-6xl w-full mx-auto px-5 sm:px-8 pb-14">
+      <div v-if="!trimmedKeyword" class="flex items-center justify-end gap-3 mb-3 -mt-1">
+        <span class="hidden sm:inline text-[11px] text-surface-300 dark:text-surface-600">自定义站点保存在本机浏览器</span>
+        <button
+          type="button"
+          class="flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium border border-surface-200 dark:border-surface-700 text-surface-600 dark:text-surface-300 hover:border-accent-400 hover:text-accent-600 dark:hover:text-accent-400 transition-colors"
+          @click="openAddForm"
+        >
+          <Icon icon="mdi:plus" class="text-sm" />
+          添加站点
+        </button>
+      </div>
       <CategoryNav :categories="displayCategories" />
 
       <p v-if="trimmedKeyword && filteredCategories.length" class="text-xs text-surface-400 dark:text-surface-500 mb-5 flex items-center justify-between gap-3">
@@ -194,6 +260,8 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onGlobalKeydown, tru
           :clear-label="!trimmedKeyword && category.name === '最近访问' ? '清空' : undefined"
           :active-key="activeKey"
           @clear="clearRecent"
+          @edit="openEditForm"
+          @remove="onRemoveItem"
         />
       </template>
 
@@ -261,5 +329,12 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onGlobalKeydown, tru
     </footer>
 
     <BackToTop />
+    <SiteFormModal
+      :open="formOpen"
+      :initial="formInitial"
+      :category-names="allCategoryNames"
+      @save="onFormSave"
+      @close="formOpen = false"
+    />
   </div>
 </template>

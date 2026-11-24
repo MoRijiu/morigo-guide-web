@@ -6,6 +6,7 @@ import HighlightText from './HighlightText.vue'
 import { toSlug } from '../utils/slug'
 import { iconTint } from '../utils/iconTint'
 import { useUserData } from '../composables/useUserData'
+import { useCustomData } from '../composables/useCustomData'
 import type { NavItem } from '../types'
 
 const props = defineProps<{
@@ -15,6 +16,13 @@ const props = defineProps<{
   index?: number
   /** 键盘方向键当前选中态 */
   active?: boolean
+  /** 所属分类名，用于判断是否为用户自定义条目 */
+  categoryName?: string
+}>()
+
+const emit = defineEmits<{
+  edit: [payload: { categoryName: string; item: NavItem }]
+  remove: [payload: { categoryName: string; item: NavItem }]
 }>()
 
 const rootRef = ref<HTMLElement | null>(null)
@@ -28,7 +36,23 @@ watch(
 )
 
 const { isFavorite, toggleFavorite, recordVisit } = useUserData()
+const { isCustomItem } = useCustomData()
 const favorited = computed(() => isFavorite(props.item.url))
+const isCustom = computed(() =>
+  props.categoryName ? isCustomItem(props.categoryName, props.item.url) : false
+)
+
+function onEdit(e: Event) {
+  e.preventDefault()
+  e.stopPropagation()
+  if (props.categoryName) emit('edit', { categoryName: props.categoryName, item: props.item })
+}
+
+function onRemove(e: Event) {
+  e.preventDefault()
+  e.stopPropagation()
+  if (props.categoryName) emit('remove', { categoryName: props.categoryName, item: props.item })
+}
 const copied = ref(false)
 let copyTimer: ReturnType<typeof setTimeout> | undefined
 
@@ -81,6 +105,26 @@ async function onCopyLink(e: Event) {
       </p>
     </div>
     <span class="flex items-center gap-0.5 shrink-0 self-start">
+      <button
+        v-if="isCustom"
+        type="button"
+        title="编辑"
+        aria-label="编辑站点"
+        @click="onEdit"
+        class="p-1 rounded transition-all text-surface-300 dark:text-surface-600 opacity-60 sm:opacity-0 sm:group-hover:opacity-100 focus-visible:opacity-100 hover:text-accent-500"
+      >
+        <Icon icon="mdi:lead-pencil" class="text-sm" />
+      </button>
+      <button
+        v-if="isCustom"
+        type="button"
+        title="删除"
+        aria-label="删除站点"
+        @click="onRemove"
+        class="p-1 rounded transition-all text-surface-300 dark:text-surface-600 opacity-60 sm:opacity-0 sm:group-hover:opacity-100 focus-visible:opacity-100 hover:text-red-500"
+      >
+        <Icon icon="mdi:trash-can-outline" class="text-sm" />
+      </button>
       <button
         type="button"
         :title="favorited ? '取消收藏' : '收藏'"
