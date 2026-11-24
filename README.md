@@ -74,7 +74,7 @@ npm run preview    # 预览生产构建
 npm run check:links  # 链接体检：检查默认数据全部链接可达性，报告写 docs/LINK-CHECK.md
 ```
 
-构建产物在 `dist/`，丢到任何静态托管（Nginx / 七牛 / Vercel / GitHub Pages…）即可上线。
+构建产物在 `dist/`，丢到任何静态托管（Nginx / Vercel / Netlify / Cloudflare Pages / GitHub Pages…）即可上线。
 
 ## 🧩 放你自己的站点清单 Your Own List
 

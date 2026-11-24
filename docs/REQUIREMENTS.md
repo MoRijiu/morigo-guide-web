@@ -4,7 +4,7 @@
 
 ## 1. 产品定位
 
-MoriGo 是一个开源、可自部署的网址导航站（生产：go.morijiu.cn，测试：go.test.morijiu.cn）：打开就能用，核心价值是**快**——打开快、找得快、点开快。仓库默认数据只含通用示例分类；任何部署者（含维护者本人）的私人站点清单走 gitignored 的 `src/config/navigation.local.ts` 本地覆盖，构建时合并置顶，不进仓库。
+MoriGo 是一个开源、可自部署的网址导航站：打开就能用，核心价值是**快**——打开快、找得快、点开快。纯静态构建，产物可发布到任意静态托管。仓库默认数据只含通用示例分类；任何部署者（含维护者本人）的私人站点清单走 gitignored 的 `src/config/navigation.local.ts` 本地覆盖，构建时合并置顶，不进仓库。
 
 设计原则：
 
@@ -26,12 +26,12 @@ MoriGo 是一个开源、可自部署的网址导航站（生产：go.morijiu.cn
 
 | 轮次 | 主题 | 内容 |
 | --- | --- | --- |
-| R1 | 地基 | go.test 测试环境、需求/设计文档入仓、版本徽标（测试 `_test`、生产裸版本、开发 `_dev`） |
+| R1 | 地基 | 测试环境搭建、需求/设计文档入仓、版本徽标（测试 `_test`、生产裸版本、开发 `_dev`） |
 | R2 | 可用性 | 搜索关键词高亮、别名匹配钩子、无结果时外部搜索直达 + 热门推荐；分类快速导航条（sticky 锚点 + 滚动高亮） |
 | R3 | 功能性 | 收藏（星标 + 「我的收藏」置顶分组）、最近访问分组、一键复制链接 |
 | R4 | 美观 | 视觉 v2：卡片 hover 动效、图标品牌底色、渐入动画 |
 | R5 | 友好性 | 键盘流（`/` 聚焦、Esc 清空、方向键 + 回车打开）、空状态文案、无障碍（aria、focus 可见） |
-| R6 | 数据与打磨 | 「我的产品」分类置顶（博客 / 通行证 / 无敌刷题 / 墨记 / tools 等）、SEO/meta/OG、favicon、构建体积检查 |
+| R6 | 数据与打磨 | 个人站点分类置顶（后由 R8 改为本地覆盖机制，见下）、SEO/meta/OG、favicon、构建体积检查 |
 | R8 | 开源化 | 默认数据移除私人产品，改为 `navigation.local.ts` 本地覆盖机制（仓库只留 `.example` 示例），README 说明自部署清单 |
 | R10 | 自定义站点 | 访客在页面增删改自己的导航项与分类（localStorage 持久化），同名分类并入默认分类、新分类置顶展示；与构建期 `navigation.local.ts` 覆盖互补 |
 | R9 | 字体自托管 | Inter / Space Grotesk 改 @fontsource 本地 woff2（latin 子集、font-display: swap），移除 Google Fonts 运行时外链；meta 文案改开源通用口径 |
@@ -49,8 +49,9 @@ MoriGo 是一个开源、可自部署的网址导航站（生产：go.morijiu.cn
 | R22 | 链接体检 | 构建期脚本 `scripts/check-links.mjs`（`npm run check:links`）检查默认导航数据全部链接可达性：HEAD 优先、405/501 或失败时 GET 复核、并发 5、超时 10s；结果分可达/存疑（401/403/429，多为站点拦截脚本）/失效三档，生成报告 `docs/LINK-CHECK.md`；`--strict` 有失效链接时退出 1 可挂 CI，`--no-report` 只打控制台；纯构建期工具、不做运行时探测 |
 | R23 | 数据扩充 | 默认导航数据从 5 分类 22 站点扩充到 9 分类 51 站点：新增「AI 工具」（Claude/Gemini/DeepSeek/Perplexity/通义千问/Hugging Face/Poe）、「云服务」（AWS/Google Cloud/Azure/阿里云/Cloudflare/Supabase）、「效率工具」（Notion/Obsidian/DeepL/Canva/Todoist/Google Drive）、「影音娱乐」（YouTube/Netflix/Spotify/Twitch/豆瓣/小红书/Steam/网易云音乐）四个分类，学习资源补 Wikipedia/Coursera；全部条目带中文/拼音别名，图标经 scripts/gen-icons.mjs 本地注册（78→111），新增链接经 R22 体检脚本复核 |
 | R24 | 自定义图片背景 | 主题面板新增「自定义图片背景」（R15 主题系统的后续增强）：上传本地图片（类型/10MB 校验）经 canvas 压到最长边 1920px JPEG 存 IndexedDB（`morigo-db`，不走 localStorage、不上传服务器），作为背景预设「自定义」与渐变预设并列；fixed 伪元素层 cover 展示，淡化强度 0–70% 可调（存主题偏好 `bgDim`）保证内容可读性；面板内可预览/更换/删除，无图时点「自定义」直接拉起文件选择；与毛玻璃开关可叠加 |
-| R25 | 天气小组件 | R21 小组件区新增第四个组件「天气」（默认关闭，开启后才联网）：数据源 Open-Meteo（免费、无需 key），展示当前温度/天气状况（WMO 代码映射中英双语 + 日夜图标）/今日高低温/体感/湿度/风速；城市在小组件面板里选（15 个预设城市）或用浏览器定位（坐标存 `morigo:widgets` 的 weatherCity）；结果缓存 localStorage `morigo:weather-cache` 30 分钟，拉取失败有缓存时静默用旧数据、无缓存才显示重试提示；组件带网格随可见组件数自适应（4 个时桌面四列）。**状态：在途——代码保全在分支 `feat/r25-weather-wip`，因 R26 专项插队尚未合并，落地时版本升 1.26.0** |
-| R26 | 国际化专项修复 + 文档刷新 | 按 morijiu 反馈全面审计双语：①**默认导航数据双语**（推翻 R19「数据不翻译」口径）——`NavCategory.nameEn` / `NavItem.descriptionEn` 可选字段，9 分类 + 51 站点描述全补英文，展示层（卡片/分类条/锚点导航/命令面板/统计/站点表单下拉）按语言选、身份标识仍用原名，搜索同时匹配中英描述；本地覆盖与备份/分享清洗保留 En 字段，缺省回退中文不报错；用户自定义内容不翻译。②**漏译清零**：dataTransfer 报错文案（无效 JSON/格式错误/非 MoriGo 备份/书签无链接）与默认文件夹名走 i18n 字典；空状态外部引擎按钮改走统一 `engineDisplayLabel`（en 下 Baidu/Bing）。③**按钮/面板错位修复**：导入导出面板层级 z-40→z-50（原被 sticky 分类条腰斩）+ 面板加宽 w-72、英文文案缩短防折行；统计面板分类名列 w-16→w-24 英文不再截断。④README/package.json/index.html meta/DESIGN 全面刷新到 R24 实际功能 |
+| R25 | 天气小组件 | R21 小组件区新增第四个组件「天气」（默认关闭，开启后才联网）：数据源 Open-Meteo（免费、无需 key），展示当前温度/天气状况（WMO 代码映射中英双语 + 日夜图标）/今日高低温/体感/湿度/风速；城市在小组件面板里选（15 个预设城市）或用浏览器定位（坐标存 `morigo:widgets` 的 weatherCity）；结果缓存 localStorage `morigo:weather-cache` 30 分钟，拉取失败有缓存时静默用旧数据、无缓存才显示重试提示；组件带网格随可见组件数自适应（4 个时桌面四列）。**状态：开发中，尚未合并到主线** |
+| R26 | 国际化专项修复 + 文档刷新 | 按用户反馈全面审计双语：①**默认导航数据双语**（推翻 R19「数据不翻译」口径）——`NavCategory.nameEn` / `NavItem.descriptionEn` 可选字段，9 分类 + 51 站点描述全补英文，展示层（卡片/分类条/锚点导航/命令面板/统计/站点表单下拉）按语言选、身份标识仍用原名，搜索同时匹配中英描述；本地覆盖与备份/分享清洗保留 En 字段，缺省回退中文不报错；用户自定义内容不翻译。②**漏译清零**：dataTransfer 报错文案（无效 JSON/格式错误/非 MoriGo 备份/书签无链接）与默认文件夹名走 i18n 字典；空状态外部引擎按钮改走统一 `engineDisplayLabel`（en 下 Baidu/Bing）。③**按钮/面板错位修复**：导入导出面板层级 z-40→z-50（原被 sticky 分类条腰斩）+ 面板加宽 w-72、英文文案缩短防折行；统计面板分类名列 w-16→w-24 英文不再截断。④README/package.json/index.html meta/DESIGN 全面刷新到 R24 实际功能 |
+| R27 | 文档去私人化 | 公开仓库文档与注释清理：移除维护者自身的基础设施信息（服务器、托管账号、内部环境地址与发布纪律等），环境与发布一节改为通用自部署口径；公开文档只写「怎么用、怎么自部署」，具体部署细节不进仓库 |
 
 ### 2.3 非目标
 
@@ -60,13 +61,15 @@ MoriGo 是一个开源、可自部署的网址导航站（生产：go.morijiu.cn
 
 ## 3. 环境与发布
 
-| 环境 | 地址 | 部署方式 |
-| --- | --- | --- |
-| 生产 | https://go.morijiu.cn | 七牛桶 `morijiu-site-go`（**迭代任务禁止触碰，发布由 morijiu 决定**） |
-| 测试 | https://go.test.morijiu.cn | server1 静态站点，构建时 `VITE_APP_ENV=test` |
-| 开发 | 本地 `pnpm dev` / `npm run dev` | `VITE_APP_ENV` 未设时徽标显示 `_dev` |
+MoriGo 是纯静态站点：`npm run build` 的产物在 `dist/`，发布到任意静态托管服务或 Web 服务器即可（官方演示站见 README 的在线预览链接）。
 
-版本徽标口径与 morijiu 其他产品一致：版本号取 `package.json` 的 `version`（构建注入），测试环境加 `_test` 后缀、生产裸版本号、开发 `_dev`。
+| 环境 | 构建方式 | 说明 |
+| --- | --- | --- |
+| 生产 | `npm run build` | 版本徽标为裸版本号 |
+| 测试 | `VITE_APP_ENV=test npm run build` | 版本徽标加 `_test` 后缀 |
+| 开发 | `npm run dev` | `VITE_APP_ENV` 未设时徽标显示 `_dev` |
+
+版本徽标：版本号取 `package.json` 的 `version`（构建时注入），按环境加后缀——测试 `_test`、生产裸版本号、开发 `_dev`。
 
 ## 4. 数据维护
 
