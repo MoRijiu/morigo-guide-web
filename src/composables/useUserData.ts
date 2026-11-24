@@ -6,6 +6,7 @@ import { ref, computed } from 'vue'
  */
 const FAV_KEY = 'morigo:favorites'
 const RECENT_KEY = 'morigo:recent'
+const COUNTS_KEY = 'morigo:visit-counts'
 const RECENT_MAX = 12
 
 function load(key: string): string[] {
@@ -27,8 +28,33 @@ function save(key: string, value: string[]) {
   }
 }
 
+function loadCounts(): Record<string, number> {
+  try {
+    const raw = localStorage.getItem(COUNTS_KEY)
+    if (!raw) return {}
+    const parsed = JSON.parse(raw)
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {}
+    const out: Record<string, number> = {}
+    for (const [k, v] of Object.entries(parsed)) {
+      if (typeof v === 'number' && Number.isFinite(v) && v > 0) out[k] = Math.floor(v)
+    }
+    return out
+  } catch {
+    return {}
+  }
+}
+
+function saveCounts(value: Record<string, number>) {
+  try {
+    localStorage.setItem(COUNTS_KEY, JSON.stringify(value))
+  } catch {
+    // 同 save：静默降级
+  }
+}
+
 const favorites = ref<string[]>(load(FAV_KEY))
 const recent = ref<string[]>(load(RECENT_KEY))
+const visitCounts = ref<Record<string, number>>(loadCounts())
 
 export function useUserData() {
   const favoriteSet = computed(() => new Set(favorites.value))
@@ -47,6 +73,19 @@ export function useUserData() {
   function recordVisit(url: string) {
     recent.value = [url, ...recent.value.filter((u) => u !== url)].slice(0, RECENT_MAX)
     save(RECENT_KEY, recent.value)
+    visitCounts.value = { ...visitCounts.value, [url]: (visitCounts.value[url] ?? 0) + 1 }
+    saveCounts(visitCounts.value)
+  }
+
+  const totalVisits = computed(() =>
+    Object.values(visitCounts.value).reduce((sum, n) => sum + n, 0)
+  )
+
+  /** 清空访问统计（计数 + 最近访问），收藏不受影响 */
+  function clearStats() {
+    visitCounts.value = {}
+    saveCounts(visitCounts.value)
+    clearRecent()
   }
 
   function clearRecent() {
@@ -67,5 +106,5 @@ export function useUserData() {
     save(RECENT_KEY, recent.value)
   }
 
-  return { favorites, recent, isFavorite, toggleFavorite, recordVisit, clearRecent, importUserData }
+  return { favorites, recent, visitCounts, totalVisits, isFavorite, toggleFavorite, recordVisit, clearRecent, clearStats, importUserData }
 }
