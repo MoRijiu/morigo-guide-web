@@ -13,6 +13,7 @@ import { APP_VERSION_LABEL } from './version'
 import { useUserData } from './composables/useUserData'
 import { useCustomData } from './composables/useCustomData'
 import { useViewPrefs } from './composables/useViewPrefs'
+import { useSearchExtras, buildSearchUrl } from './composables/useSearchExtras'
 import SiteFormModal from './components/SiteFormModal.vue'
 import DataTransfer from './components/DataTransfer.vue'
 import CommandPalette, { type PaletteEntry } from './components/CommandPalette.vue'
@@ -116,9 +117,28 @@ const displayCategories = computed<NavCategory[]>(() =>
     : [...personalCategories.value, ...filteredCategories.value]
 )
 
-const externalEngines = computed(() =>
-  siteConfig.search.engines.filter((e) => e.key !== 'site' && e.url)
-)
+const { customEngines, suggestionsOpen } = useSearchExtras()
+
+const externalEngines = computed(() => [
+  ...siteConfig.search.engines.filter((e) => e.key !== 'site' && e.url),
+  ...customEngines.value,
+])
+
+/** 建议下拉用：全量站点（按 url 去重）与热门词 */
+const allItems = computed<NavItem[]>(() => {
+  const seen = new Set<string>()
+  const list: NavItem[] = []
+  for (const cat of mergedCategories.value) {
+    for (const item of cat.items) {
+      if (seen.has(item.url)) continue
+      seen.add(item.url)
+      list.push(item)
+    }
+  }
+  return list
+})
+
+const hotTerms = computed<string[]>(() => hotItems.value.map((i) => i.title))
 
 const totalCount = computed(
   () => mergedCategories.value.reduce((sum, cat) => sum + cat.items.length, 0)
@@ -166,6 +186,12 @@ function onRemoveItem(payload: { categoryName: string; item: NavItem }) {
 
 function onSearch(val: string) {
   keyword.value = val
+}
+
+/** 建议下拉里的站点直达：记最近访问并打开 */
+function onOpenItem(item: NavItem) {
+  recordVisit(item.url)
+  window.open(item.url, '_blank', 'noopener')
 }
 
 // ==================== 键盘流 ====================
@@ -220,6 +246,8 @@ function onGlobalKeydown(e: KeyboardEvent) {
   }
 
   const fromSearch = (e.target as HTMLElement | null)?.id === 'morigo-search-input'
+  // 搜索建议下拉打开时，方向键/回车归 SearchBar 处理
+  if (fromSearch && suggestionsOpen.value && (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Enter')) return
   if (!fromSearch && activeIndex.value < 0) return
   if (!flatNav.value.length) return
 
@@ -342,7 +370,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onGlobalKeydown, tru
         {{ siteConfig.title }}<span class="text-accent-600 dark:text-accent-400">{{ siteConfig.titleHighlight }}</span>
       </h2>
       <p class="text-surface-400 dark:text-surface-500 text-xs mb-5">{{ siteConfig.tagline }} · 共 {{ totalCount }} 个站点</p>
-      <SearchBar v-if="siteConfig.search.enabled" ref="searchBarRef" @search="onSearch" />
+      <SearchBar v-if="siteConfig.search.enabled" ref="searchBarRef" :items="allItems" :hot-terms="hotTerms" @search="onSearch" @open-item="onOpenItem" />
     </div>
 
     <main id="main-content" class="flex-1 max-w-6xl w-full mx-auto px-5 sm:px-8 pb-14">
@@ -455,7 +483,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onGlobalKeydown, tru
             <a
               v-for="engine in externalEngines"
               :key="engine.key"
-              :href="engine.url + encodeURIComponent(trimmedKeyword)"
+              :href="buildSearchUrl(engine, trimmedKeyword)"
               target="_blank"
               rel="noopener noreferrer"
               class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium border border-surface-200 dark:border-surface-700 text-surface-600 dark:text-surface-300 hover:border-accent-400 hover:text-accent-600 dark:hover:text-accent-400 transition-colors"
