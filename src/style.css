@@ -74,13 +74,24 @@
   html[data-bg='custom'] body::before {
     content: '';
     position: fixed;
-    inset: 0;
+    /* 四周外扩 30px，藏住模糊时边缘的透明渗出 */
+    inset: -30px;
     z-index: -1;
     background-image: var(--custom-bg-image, none);
     background-size: cover;
     background-position: center;
     opacity: var(--bg-image-opacity, 0.65);
+    filter: blur(var(--bg-image-blur, 0px));
     pointer-events: none;
+  }
+  /* 随页滚动：伪元素改挂在 body 上随文档一起滚（body 需成为定位上下文） */
+  html[data-bg='custom'][data-bg-fixed='false'] body {
+    position: relative;
+  }
+  html[data-bg='custom'][data-bg-fixed='false'] body::before {
+    position: absolute;
+    /* 滚动模式只纵向外扩：横向外扩会撑出页面级横滚（实测 +30px） */
+    inset: -30px 0;
   }
 
   body {
