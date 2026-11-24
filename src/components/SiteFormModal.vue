@@ -3,6 +3,9 @@ import { ref, watch, nextTick } from 'vue'
 import { Icon } from '@iconify/vue'
 import { normalizeUrl } from '../composables/useCustomData'
 import type { NavItem } from '../types'
+import { useI18n } from '../i18n'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   open: boolean
@@ -52,27 +55,27 @@ watch(
 )
 
 function onSubmit() {
-  const t = title.value.trim()
-  if (!t) {
-    error.value = '请填写站点名称'
+  const name = title.value.trim()
+  if (!name) {
+    error.value = t('form.errName')
     return
   }
   const normalized = normalizeUrl(url.value)
   if (!normalized) {
-    error.value = '网址不合法，请检查（如 example.com 或 https://example.com）'
+    error.value = t('form.errUrl')
     return
   }
   const cat =
     categoryChoice.value === NEW_CATEGORY ? newCategory.value.trim() : categoryChoice.value
   if (!cat) {
-    error.value = '请填写新分类名称'
+    error.value = t('form.errCat')
     return
   }
   emit('save', {
     categoryName: cat,
     item: {
-      title: t,
-      description: description.value.trim() || t,
+      title: name,
+      description: description.value.trim() || name,
       url: normalized,
       icon: icon.value.trim() || 'mdi:web',
     },
@@ -86,7 +89,7 @@ function onSubmit() {
     class="fixed inset-0 z-[70] flex items-end sm:items-center justify-center p-0 sm:p-4"
     role="dialog"
     aria-modal="true"
-    :aria-label="initial ? '编辑站点' : '添加站点'"
+    :aria-label="initial ? t('form.editTitle') : t('form.addTitle')"
   >
     <div class="absolute inset-0 bg-black/40 backdrop-blur-[2px]" @click="emit('close')"></div>
     <form
@@ -96,12 +99,12 @@ function onSubmit() {
     >
       <div class="flex items-center justify-between mb-4">
         <h3 class="text-sm font-semibold text-surface-800 dark:text-surface-100">
-          {{ initial ? '编辑站点' : '添加站点' }}
+          {{ initial ? t('form.editTitle') : t('form.addTitle') }}
         </h3>
         <button
           type="button"
           class="p-1 rounded text-surface-400 hover:text-surface-600 dark:hover:text-surface-300"
-          aria-label="关闭"
+          :aria-label="t('form.close')"
           @click="emit('close')"
         >
           <Icon icon="mdi:close" class="text-base" />
@@ -109,52 +112,52 @@ function onSubmit() {
       </div>
 
       <label class="block mb-3">
-        <span class="text-xs text-surface-500 dark:text-surface-400">名称 *</span>
+        <span class="text-xs text-surface-500 dark:text-surface-400">{{ t('form.name') }}</span>
         <input
           ref="titleRef"
           v-model="title"
           type="text"
           maxlength="40"
-          placeholder="如：我的博客"
+          :placeholder="t('form.namePh')"
           class="mt-1 w-full px-3 py-2 text-sm rounded-lg border border-surface-200 dark:border-surface-700 bg-transparent text-surface-800 dark:text-surface-100 placeholder:text-surface-300 dark:placeholder:text-surface-600 outline-none focus:border-accent-400"
         />
       </label>
 
       <label class="block mb-3">
-        <span class="text-xs text-surface-500 dark:text-surface-400">网址 *</span>
+        <span class="text-xs text-surface-500 dark:text-surface-400">{{ t('form.url') }}</span>
         <input
           v-model="url"
           type="text"
           inputmode="url"
-          placeholder="example.com 或 https://example.com"
+          placeholder="example.com / https://example.com"
           class="mt-1 w-full px-3 py-2 text-sm rounded-lg border border-surface-200 dark:border-surface-700 bg-transparent text-surface-800 dark:text-surface-100 placeholder:text-surface-300 dark:placeholder:text-surface-600 outline-none focus:border-accent-400"
         />
       </label>
 
       <label class="block mb-3">
-        <span class="text-xs text-surface-500 dark:text-surface-400">描述</span>
+        <span class="text-xs text-surface-500 dark:text-surface-400">{{ t('form.desc') }}</span>
         <input
           v-model="description"
           type="text"
           maxlength="60"
-          placeholder="一句话说明这个站点是干什么的"
+          :placeholder="t('form.descPh')"
           class="mt-1 w-full px-3 py-2 text-sm rounded-lg border border-surface-200 dark:border-surface-700 bg-transparent text-surface-800 dark:text-surface-100 placeholder:text-surface-300 dark:placeholder:text-surface-600 outline-none focus:border-accent-400"
         />
       </label>
 
       <div class="flex gap-2 mb-3">
         <label class="block flex-1">
-          <span class="text-xs text-surface-500 dark:text-surface-400">分类</span>
+          <span class="text-xs text-surface-500 dark:text-surface-400">{{ t('form.category') }}</span>
           <select
             v-model="categoryChoice"
             class="mt-1 w-full px-2 py-2 text-sm rounded-lg border border-surface-200 dark:border-surface-700 bg-transparent text-surface-800 dark:text-surface-100 outline-none focus:border-accent-400 dark:bg-surface-900"
           >
             <option v-for="name in categoryNames" :key="name" :value="name">{{ name }}</option>
-            <option :value="NEW_CATEGORY">＋ 新建分类…</option>
+            <option :value="NEW_CATEGORY">{{ t('form.newCategory') }}</option>
           </select>
         </label>
         <label class="block flex-1">
-          <span class="text-xs text-surface-500 dark:text-surface-400">图标（可选）</span>
+          <span class="text-xs text-surface-500 dark:text-surface-400">{{ t('form.icon') }}</span>
           <input
             v-model="icon"
             type="text"
@@ -165,19 +168,19 @@ function onSubmit() {
       </div>
 
       <label v-if="categoryChoice === NEW_CATEGORY" class="block mb-3">
-        <span class="text-xs text-surface-500 dark:text-surface-400">新分类名称 *</span>
+        <span class="text-xs text-surface-500 dark:text-surface-400">{{ t('form.newCatName') }}</span>
         <input
           v-model="newCategory"
           type="text"
           maxlength="20"
-          placeholder="如：我的收藏夹"
+          :placeholder="t('form.newCatPh')"
           class="mt-1 w-full px-3 py-2 text-sm rounded-lg border border-surface-200 dark:border-surface-700 bg-transparent text-surface-800 dark:text-surface-100 placeholder:text-surface-300 dark:placeholder:text-surface-600 outline-none focus:border-accent-400"
         />
       </label>
 
       <p v-if="error" class="text-xs text-red-500 mb-3" role="alert">{{ error }}</p>
       <p class="text-[11px] text-surface-400 dark:text-surface-500 mb-4">
-        自定义站点只保存在这台设备的浏览器里，不会上传。
+        {{ t('form.note') }}
       </p>
 
       <div class="flex justify-end gap-2">
@@ -186,13 +189,13 @@ function onSubmit() {
           class="px-3.5 py-2 text-xs rounded-lg border border-surface-200 dark:border-surface-700 text-surface-600 dark:text-surface-300 hover:border-surface-300 transition-colors"
           @click="emit('close')"
         >
-          取消
+          {{ t('common.cancel') }}
         </button>
         <button
           type="submit"
           class="px-3.5 py-2 text-xs rounded-lg bg-accent-600 text-white font-medium hover:bg-accent-500 transition-colors"
         >
-          {{ initial ? '保存' : '添加' }}
+          {{ initial ? t('form.save') : t('common.add') }}
         </button>
       </div>
     </form>

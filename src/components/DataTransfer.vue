@@ -10,6 +10,9 @@ import {
   parseBookmarks,
 } from '../utils/dataTransfer'
 import { buildShareUrl } from '../utils/share'
+import { useI18n } from '../i18n'
+
+const { t } = useI18n()
 
 const { customCategories, importCategories } = useCustomData()
 const { favorites, recent, importUserData } = useUserData()
@@ -24,7 +27,7 @@ const shareUrl = ref('')
 
 async function onShare() {
   if (!customCategories.value.length && !favorites.value.length) {
-    message.value = '还没有可分享的内容：先添加自定义站点或收藏一些站点'
+    message.value = t('dt.msgNoShare')
     isError.value = true
     return
   }
@@ -34,10 +37,10 @@ async function onShare() {
   })
   try {
     await navigator.clipboard.writeText(shareUrl.value)
-    message.value = '分享链接已复制，发给朋友打开即可导入'
+    message.value = t('dt.msgShareCopied')
     isError.value = false
   } catch {
-    message.value = '链接已生成，请手动复制下方链接'
+    message.value = t('dt.msgShareReady')
     isError.value = false
   }
 }
@@ -52,7 +55,7 @@ onBeforeUnmount(() => window.removeEventListener('morigo:open-share', onOpenShar
 
 function onExport() {
   downloadBackup(buildBackup(customCategories.value, favorites.value, recent.value))
-  message.value = '已导出备份（含自定义站点、收藏、最近访问）'
+  message.value = t('dt.msgExported')
   isError.value = false
 }
 
@@ -70,16 +73,16 @@ async function onFile(e: Event) {
     if (/\.html?$/i.test(file.name)) {
       const cats = parseBookmarks(text)
       const count = importCategories(cats, mode.value)
-      message.value = `已从书签导入 ${count} 个站点（${cats.length} 个分类）`
+      message.value = t('dt.msgBookmarks', { count, cats: cats.length })
     } else {
       const backup = parseBackup(text)
       const count = importCategories(backup.customCategories, mode.value)
       importUserData(backup.favorites, backup.recent, mode.value)
-      message.value = `已导入 ${count} 个自定义站点、${backup.favorites.length} 条收藏`
+      message.value = t('dt.msgImported', { count, fav: backup.favorites.length })
     }
     isError.value = false
   } catch (err) {
-    message.value = err instanceof Error ? err.message : '导入失败，文件格式不正确'
+    message.value = err instanceof Error ? err.message : t('dt.msgImportFail')
     isError.value = true
   }
 }
@@ -95,7 +98,7 @@ async function onFile(e: Event) {
       @click="open = !open"
     >
       <Icon icon="mdi:swap-horizontal" class="text-sm" />
-      导入/导出
+      {{ t('dt.button') }}
     </button>
 
     <div
@@ -108,7 +111,7 @@ async function onFile(e: Event) {
         @click="onExport"
       >
         <Icon icon="mdi:download" class="text-sm" />
-        导出备份 JSON
+        {{ t('dt.export') }}
       </button>
 
       <button
@@ -117,20 +120,20 @@ async function onFile(e: Event) {
         @click="onShare"
       >
         <Icon icon="mdi:share-variant" class="text-sm" />
-        生成分享链接（自定义站点 + 收藏）
+        {{ t('dt.share') }}
       </button>
       <input
         v-if="shareUrl"
         :value="shareUrl"
         readonly
-        aria-label="分享链接"
+        :aria-label="t('dt.shareAria')"
         class="w-full mt-1 px-2 py-1.5 rounded-md border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 text-[11px] text-surface-500 dark:text-surface-400"
         @focus="($event.target as HTMLInputElement).select()"
       />
 
       <div class="flex items-center gap-1.5 mt-2 px-2">
-        <span class="text-[11px] text-surface-400 dark:text-surface-500">导入方式</span>
-        <div class="flex rounded-md border border-surface-200 dark:border-surface-700 overflow-hidden" role="radiogroup" aria-label="导入方式">
+        <span class="text-[11px] text-surface-400 dark:text-surface-500">{{ t('dt.importMode') }}</span>
+        <div class="flex rounded-md border border-surface-200 dark:border-surface-700 overflow-hidden" role="radiogroup" :aria-label="t('dt.importMode')">
           <button
             type="button"
             role="radio"
@@ -138,7 +141,7 @@ async function onFile(e: Event) {
             class="px-2 py-1 text-[11px]"
             :class="mode === 'merge' ? 'bg-accent-600 text-white' : 'text-surface-500 dark:text-surface-400'"
             @click="mode = 'merge'"
-          >合并</button>
+          >{{ t('dt.merge') }}</button>
           <button
             type="button"
             role="radio"
@@ -146,7 +149,7 @@ async function onFile(e: Event) {
             class="px-2 py-1 text-[11px]"
             :class="mode === 'replace' ? 'bg-accent-600 text-white' : 'text-surface-500 dark:text-surface-400'"
             @click="mode = 'replace'"
-          >覆盖</button>
+          >{{ t('dt.replace') }}</button>
         </div>
       </div>
 
@@ -156,7 +159,7 @@ async function onFile(e: Event) {
         @click="pickFile"
       >
         <Icon icon="mdi:upload" class="text-sm" />
-        导入备份 JSON / 浏览器书签 HTML
+        {{ t('dt.import') }}
       </button>
       <input
         ref="fileInput"
@@ -165,7 +168,7 @@ async function onFile(e: Event) {
         class="hidden"
         @change="onFile"
       />
-      <p class="px-2 mt-1 text-[11px] text-surface-300 dark:text-surface-600">覆盖会替换现有自定义站点与收藏，请先导出备份。</p>
+      <p class="px-2 mt-1 text-[11px] text-surface-300 dark:text-surface-600">{{ t('dt.replaceWarn') }}</p>
       <p
         v-if="message"
         class="px-2 mt-2 text-[11px]"

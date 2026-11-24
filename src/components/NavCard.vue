@@ -8,6 +8,9 @@ import { iconTint } from '../utils/iconTint'
 import { useUserData } from '../composables/useUserData'
 import { useCustomData } from '../composables/useCustomData'
 import type { NavItem } from '../types'
+import { useI18n } from '../i18n'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   item: NavItem
@@ -113,7 +116,7 @@ async function onCopyLink(e: Event) {
     <div class="min-w-0 flex-1">
       <h3 class="text-[13px] font-medium text-surface-700 dark:text-surface-200 truncate group-hover:text-accent-600 dark:group-hover:text-accent-400 transition-colors duration-200">
         <HighlightText :text="item.title" :keyword="keyword" />
-        <Icon v-if="item.hot" icon="mdi:fire" class="inline-block text-[11px] text-orange-400 ml-1 -mt-0.5" aria-label="热门" />
+        <Icon v-if="item.hot" icon="mdi:fire" class="inline-block text-[11px] text-orange-400 ml-1 -mt-0.5" :aria-label="t('card.hot')" />
       </h3>
       <p class="text-[11px] text-surface-400 dark:text-surface-500 truncate mt-0.5 leading-tight">
         <HighlightText :text="item.description" :keyword="keyword" />
@@ -124,8 +127,8 @@ async function onCopyLink(e: Event) {
       <button
         v-if="isCustom"
         type="button"
-        title="编辑"
-        aria-label="编辑站点"
+        :title="t('card.edit')"
+        :aria-label="t('card.editAria')"
         @click="onEdit"
         class="p-1 rounded transition-all text-surface-300 dark:text-surface-600 opacity-60 sm:opacity-0 sm:group-hover:opacity-100 focus-visible:opacity-100 hover:text-accent-500"
       >
@@ -134,8 +137,8 @@ async function onCopyLink(e: Event) {
       <button
         v-if="isCustom"
         type="button"
-        title="删除"
-        aria-label="删除站点"
+        :title="t('card.delete')"
+        :aria-label="t('card.deleteAria')"
         @click="onRemove"
         class="p-1 rounded transition-all text-surface-300 dark:text-surface-600 opacity-60 sm:opacity-0 sm:group-hover:opacity-100 focus-visible:opacity-100 hover:text-red-500"
       >
@@ -143,8 +146,8 @@ async function onCopyLink(e: Event) {
       </button>
       <button
         type="button"
-        :title="favorited ? '取消收藏' : '收藏'"
-        :aria-label="favorited ? '取消收藏' : '收藏'"
+        :title="favorited ? t('card.unfav') : t('card.fav')"
+        :aria-label="favorited ? t('card.unfav') : t('card.fav')"
         :aria-pressed="favorited"
         @click="onToggleFavorite"
         :class="[
@@ -158,8 +161,8 @@ async function onCopyLink(e: Event) {
       </button>
       <button
         type="button"
-        :title="copied ? '已复制' : '复制链接'"
-        aria-label="复制链接"
+        :title="copied ? t('card.copied') : t('card.copy')"
+        :aria-label="t('card.copy')"
         @click="onCopyLink"
         :class="[
           'p-1 rounded transition-all',

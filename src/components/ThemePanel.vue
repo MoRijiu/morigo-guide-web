@@ -2,6 +2,9 @@
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useThemePrefs, ACCENTS, BACKGROUNDS } from '../composables/useThemePrefs'
+import { useI18n } from '../i18n'
+
+const { t } = useI18n()
 
 const { accent, bg, glass, setAccent, setBg, setGlass } = useThemePrefs()
 
@@ -38,25 +41,25 @@ onBeforeUnmount(() => {
       @click="open = !open"
     >
       <Icon icon="mdi:palette-outline" class="text-sm" />
-      主题
+      {{ t('theme.button') }}
     </button>
 
     <div
       v-if="open"
       class="absolute right-0 top-full mt-1.5 z-50 w-60 rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-900 shadow-lg p-3 text-left"
       role="group"
-      aria-label="主题设置"
+      :aria-label="t('theme.aria')"
     >
-      <p class="px-1 text-[11px] font-medium text-surface-400 dark:text-surface-500 mb-1.5">强调色</p>
-      <div class="flex items-center gap-2 px-1 mb-3" role="radiogroup" aria-label="强调色">
+      <p class="px-1 text-[11px] font-medium text-surface-400 dark:text-surface-500 mb-1.5">{{ t('theme.accent') }}</p>
+      <div class="flex items-center gap-2 px-1 mb-3" role="radiogroup" :aria-label="t('theme.accent')">
         <button
           v-for="a in ACCENTS"
           :key="a.id"
           type="button"
           role="radio"
           :aria-checked="accent === a.id"
-          :aria-label="a.label"
-          :title="a.label"
+          :aria-label="t('accent.' + a.id)"
+          :title="t('accent.' + a.id)"
           class="w-6 h-6 rounded-full flex items-center justify-center transition-transform hover:scale-110"
           :style="{ backgroundColor: a.swatch, boxShadow: accent === a.id ? `0 0 0 2px var(--tw-ring-offset-color, #fff), 0 0 0 4px ${a.swatch}` : undefined }"
           @click="setAccent(a.id)"
@@ -65,8 +68,8 @@ onBeforeUnmount(() => {
         </button>
       </div>
 
-      <p class="px-1 text-[11px] font-medium text-surface-400 dark:text-surface-500 mb-1.5">背景</p>
-      <div class="flex flex-wrap gap-1.5 px-1 mb-3" role="radiogroup" aria-label="背景预设">
+      <p class="px-1 text-[11px] font-medium text-surface-400 dark:text-surface-500 mb-1.5">{{ t('theme.bg') }}</p>
+      <div class="flex flex-wrap gap-1.5 px-1 mb-3" role="radiogroup" :aria-label="t('theme.bgAria')">
         <button
           v-for="b in BACKGROUNDS"
           :key="b.id"
@@ -78,7 +81,7 @@ onBeforeUnmount(() => {
             ? 'border-accent-500 text-accent-600 dark:text-accent-400 bg-accent-50 dark:bg-accent-500/10'
             : 'border-surface-200 dark:border-surface-700 text-surface-500 dark:text-surface-400 hover:border-accent-300'"
           @click="setBg(b.id)"
-        >{{ b.label }}</button>
+        >{{ t('bg.' + b.id) }}</button>
       </div>
 
       <button
@@ -88,7 +91,7 @@ onBeforeUnmount(() => {
         class="w-full flex items-center justify-between px-1 py-1 rounded-md text-xs text-surface-600 dark:text-surface-300"
         @click="setGlass(!glass)"
       >
-        <span>毛玻璃质感</span>
+        <span>{{ t('theme.glass') }}</span>
         <span
           class="relative w-8 h-[18px] rounded-full transition-colors"
           :class="glass ? 'bg-accent-500' : 'bg-surface-200 dark:bg-surface-700'"
@@ -100,7 +103,7 @@ onBeforeUnmount(() => {
           />
         </span>
       </button>
-      <p class="px-1 mt-1.5 text-[11px] text-surface-300 dark:text-surface-600">主题偏好保存在本机浏览器。</p>
+      <p class="px-1 mt-1.5 text-[11px] text-surface-300 dark:text-surface-600">{{ t('theme.note') }}</p>
     </div>
   </div>
 </template>

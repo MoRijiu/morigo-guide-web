@@ -5,6 +5,9 @@ import DynamicIcon from './DynamicIcon.vue'
 import { categoryAnchorId } from '../utils/slug'
 import type { NavCategory } from '../types'
 import NavCard from './NavCard.vue'
+import { useI18n } from '../i18n'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   category: NavCategory
@@ -54,8 +57,8 @@ function copyAnchor(id: string) {
         type="button"
         class="p-0.5 -ml-1 rounded text-surface-300 dark:text-surface-600 hover:text-accent-500 transition-colors"
         :aria-expanded="!collapsed"
-        :aria-label="collapsed ? `展开「${category.name}」` : `折叠「${category.name}」`"
-        :title="collapsed ? '展开' : '折叠'"
+        :aria-label="collapsed ? t('section.expand', { name: category.name }) : t('section.collapse', { name: category.name })"
+        :title="collapsed ? t('section.expandShort') : t('section.collapseShort')"
         @click="emit('toggle-collapse')"
       >
         <Icon :icon="collapsed ? 'mdi:chevron-right' : 'mdi:chevron-down'" class="text-base" />
@@ -76,8 +79,8 @@ function copyAnchor(id: string) {
         <button
           @click="copyAnchor(categoryId)"
           class="opacity-0 group-hover/cat:opacity-100 focus-visible:opacity-100 text-surface-300 dark:text-surface-600 hover:text-accent-500 transition-all"
-          title="复制锚点链接"
-          aria-label="复制锚点链接"
+          :title="t('section.copyAnchor')"
+          :aria-label="t('section.copyAnchor')"
         >
           <Icon icon="mdi:link-variant" class="text-sm" />
         </button>

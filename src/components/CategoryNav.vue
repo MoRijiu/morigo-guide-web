@@ -3,6 +3,9 @@ import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import DynamicIcon from './DynamicIcon.vue'
 import { categoryAnchorId } from '../utils/slug'
 import type { NavCategory } from '../types'
+import { useI18n } from '../i18n'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   categories: NavCategory[]
@@ -44,7 +47,7 @@ function jump(name: string) {
   <nav
     v-if="categories.length > 1"
     class="sticky top-14 z-40 -mx-5 sm:-mx-8 px-5 sm:px-8 py-2 mb-6 backdrop-blur-lg bg-surface-50/85 dark:bg-surface-950/85 border-b border-surface-100 dark:border-surface-800/60"
-    aria-label="分类快速导航"
+    :aria-label="t('nav.aria')"
   >
     <div class="flex items-center gap-1.5 overflow-x-auto">
       <button

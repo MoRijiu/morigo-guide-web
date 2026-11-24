@@ -2,6 +2,9 @@
 import { computed } from 'vue'
 import { Icon } from '@iconify/vue'
 import type { SharePayload } from '../utils/share'
+import { useI18n } from '../i18n'
+
+const { t } = useI18n()
 
 const props = defineProps<{ payload: SharePayload | null }>()
 const emit = defineEmits<{ import: []; close: [] }>()
@@ -17,7 +20,7 @@ const itemCount = computed(
     class="fixed inset-0 z-[70] flex items-end sm:items-center justify-center p-0 sm:p-4"
     role="dialog"
     aria-modal="true"
-    aria-label="导入分享的清单"
+    :aria-label="t('share.aria')"
   >
     <div class="absolute inset-0 bg-surface-950/40 backdrop-blur-[2px]" @click="emit('close')" />
     <div
@@ -25,18 +28,16 @@ const itemCount = computed(
     >
       <div class="flex items-center gap-2">
         <Icon icon="mdi:share-variant" class="text-lg text-accent-600 dark:text-accent-400" />
-        <h2 class="text-sm font-semibold text-surface-800 dark:text-surface-100">有人分享了一份清单</h2>
+        <h2 class="text-sm font-semibold text-surface-800 dark:text-surface-100">{{ t('share.title') }}</h2>
       </div>
       <p class="mt-1.5 text-xs text-surface-500 dark:text-surface-400">
-        包含 {{ payload.customCategories.length }} 个分类、{{ itemCount }} 个站点{{
-          payload.favorites.length ? `、${payload.favorites.length} 条收藏` : ''
-        }}。导入将与你现有的自定义站点和收藏合并（按网址去重），不会覆盖。
+        {{ t('share.desc', { cats: payload.customCategories.length, items: itemCount, fav: payload.favorites.length ? t('share.favPart', { n: payload.favorites.length }) : '' }) }}
       </p>
 
       <div v-if="payload.customCategories.length" class="mt-3 space-y-2.5">
         <div v-for="cat in payload.customCategories" :key="cat.name">
           <p class="text-[11px] font-medium text-surface-400 dark:text-surface-500">
-            {{ cat.name }}（{{ cat.items.length }}）
+            {{ cat.name }} ({{ cat.items.length }})
           </p>
           <ul class="mt-1 space-y-0.5">
             <li
@@ -57,14 +58,14 @@ const itemCount = computed(
           class="flex-1 px-3 py-2 rounded-md text-xs font-medium bg-accent-600 text-white hover:bg-accent-500 transition-colors"
           @click="emit('import')"
         >
-          导入到我的导航
+          {{ t('share.import') }}
         </button>
         <button
           type="button"
           class="px-3 py-2 rounded-md text-xs font-medium border border-surface-200 dark:border-surface-700 text-surface-600 dark:text-surface-300 hover:border-accent-400 transition-colors"
           @click="emit('close')"
         >
-          不用了
+          {{ t('share.dismiss') }}
         </button>
       </div>
     </div>

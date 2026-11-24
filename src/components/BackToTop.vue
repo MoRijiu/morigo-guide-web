@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import { Icon } from '@iconify/vue'
+import { useI18n } from '../i18n'
+
+const { t } = useI18n()
 
 const visible = ref(false)
 
@@ -33,7 +36,7 @@ onUnmounted(() => window.removeEventListener('scroll', onScroll))
              hover:bg-accent-700 dark:hover:bg-accent-400 hover:shadow-xl hover:shadow-accent-500/30
              active:scale-95 transition-all duration-200
              flex items-center justify-center"
-      title="回到顶部"
+      :title="t('backToTop')"
     >
       <Icon icon="mdi:arrow-up" class="text-lg" />
     </button>

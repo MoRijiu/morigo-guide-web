@@ -5,6 +5,17 @@ import DynamicIcon from './DynamicIcon.vue'
 import siteConfig from '../config/site'
 import { useSearchExtras, buildSearchUrl } from '../composables/useSearchExtras'
 import type { NavItem, SearchEngine } from '../types'
+import { useI18n } from '../i18n'
+
+const { locale, t } = useI18n()
+
+/** 内置引擎名按语言展示（站内/百度/必应是 UI 文案，不是数据） */
+function engineLabel(engine: SearchEngine): string {
+  if (engine.key === 'site') return t('engine.site')
+  if (locale.value === 'en' && engine.key === 'baidu') return 'Baidu'
+  if (locale.value === 'en' && engine.key === 'bing') return 'Bing'
+  return engine.label
+}
 
 const props = defineProps<{
   /** 全量站点（去重后），用于建议下拉里的站点直达 */
@@ -46,8 +57,8 @@ const focused = ref(false)
 const currentEngine = computed(() => engines.value.find((e) => e.key === activeEngine.value)!)
 
 const placeholder = computed(() => {
-  if (activeEngine.value === 'site') return '搜索站内导航...（按 / 快速聚焦）'
-  return `在${currentEngine.value.label}中搜索...`
+  if (activeEngine.value === 'site') return t('search.placeholderSite')
+  return t('search.placeholderEngine', { name: engineLabel(currentEngine.value) })
 })
 
 function switchEngine(key: string) {
@@ -211,16 +222,16 @@ const formError = ref('')
 function onAddEngine() {
   formError.value = ''
   if (!newLabel.value.trim()) {
-    formError.value = '先给搜索引擎起个名字'
+    formError.value = t('engine.errName')
     return
   }
   if (!newUrl.value.trim()) {
-    formError.value = '填搜索地址，如 https://example.com/search?q={q}'
+    formError.value = t('engine.errUrl')
     return
   }
   const engine = addEngine(newLabel.value, newUrl.value)
   if (!engine) {
-    formError.value = '地址不合法：需要 http(s) 开头的完整搜索地址'
+    formError.value = t('engine.errInvalid')
     return
   }
   newLabel.value = ''
@@ -231,7 +242,7 @@ function onAddEngine() {
 
 <template>
   <div class="max-w-xl mx-auto">
-    <div class="flex items-center gap-1 mb-2.5 px-1 overflow-x-auto whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="tablist" aria-label="搜索引擎切换">
+    <div class="flex items-center gap-1 mb-2.5 px-1 overflow-x-auto whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="tablist" :aria-label="t('search.enginesAria')">
       <button
         v-for="engine in engines"
         :key="engine.key"
@@ -244,22 +255,22 @@ function onAddEngine() {
           : 'text-surface-400 hover:text-surface-600 dark:hover:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800'"
       >
         <DynamicIcon :icon="engine.icon" class="text-sm" />
-        {{ engine.label }}
+        {{ engineLabel(engine) }}
       </button>
       <button
         type="button"
         class="flex shrink-0 items-center gap-1 px-2 py-1.5 rounded-md text-xs text-surface-400 hover:text-accent-600 dark:hover:text-accent-400 hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors"
         :aria-expanded="managerOpen"
-        title="管理搜索引擎"
+        :title="t('engine.manage')"
         @click="managerOpen = !managerOpen"
       >
         <Icon icon="mdi:cog-outline" class="text-sm" />
-        <span class="hidden sm:inline">引擎</span>
+        <span class="hidden sm:inline">{{ t('engine.button') }}</span>
       </button>
     </div>
 
     <div v-if="managerOpen" class="mb-2.5 mx-1 rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-900 p-3 text-left">
-      <p class="text-xs font-medium text-surface-600 dark:text-surface-300 mb-2">自定义搜索引擎</p>
+      <p class="text-xs font-medium text-surface-600 dark:text-surface-300 mb-2">{{ t('engine.customTitle') }}</p>
       <ul v-if="customEngines.length" class="mb-2.5 space-y-1">
         <li
           v-for="engine in customEngines"
@@ -272,26 +283,26 @@ function onAddEngine() {
           <button
             type="button"
             class="ml-auto shrink-0 p-1 rounded text-surface-300 dark:text-surface-500 hover:text-red-500 transition-colors"
-            :aria-label="`删除搜索引擎 ${engine.label}`"
+            :aria-label="t('engine.delete', { name: engine.label })"
             @click="removeEngine(engine.key)"
           >
             <Icon icon="mdi:trash-can-outline" class="text-sm block" />
           </button>
         </li>
       </ul>
-      <p v-else class="text-[11px] text-surface-300 dark:text-surface-600 mb-2.5">还没有自定义引擎，在下面添加一个。</p>
+      <p v-else class="text-[11px] text-surface-300 dark:text-surface-600 mb-2.5">{{ t('engine.none') }}</p>
       <div class="flex flex-col sm:flex-row gap-1.5">
         <input
           v-model="newLabel"
           type="text"
-          placeholder="名称，如 DuckDuckGo"
+          :placeholder="t('engine.namePh')"
           class="sm:w-32 px-2.5 py-1.5 rounded-md border border-surface-200 dark:border-surface-700 bg-transparent text-xs text-surface-700 dark:text-surface-200 outline-none focus:border-accent-400"
           @keydown.enter.prevent="onAddEngine"
         />
         <input
           v-model="newUrl"
           type="text"
-          placeholder="搜索地址，如 https://duckduckgo.com/?q={q}"
+          :placeholder="t('engine.urlPh')"
           class="flex-1 px-2.5 py-1.5 rounded-md border border-surface-200 dark:border-surface-700 bg-transparent text-xs text-surface-700 dark:text-surface-200 outline-none focus:border-accent-400"
           @keydown.enter.prevent="onAddEngine"
         />
@@ -301,11 +312,11 @@ function onAddEngine() {
           @click="onAddEngine"
         >
           <Icon icon="mdi:plus" class="text-sm" />
-          添加
+          {{ t('common.add') }}
         </button>
       </div>
       <p v-if="formError" class="text-[11px] text-red-500 mt-1.5">{{ formError }}</p>
-      <p class="text-[11px] text-surface-300 dark:text-surface-600 mt-1.5">地址里用 {q} 代表关键词；不写 {q} 时关键词会拼到地址末尾。自定义引擎只保存在本机浏览器。</p>
+      <p class="text-[11px] text-surface-300 dark:text-surface-600 mt-1.5">{{ t('engine.hint') }}</p>
     </div>
 
     <div class="relative">
@@ -317,7 +328,7 @@ function onAddEngine() {
         class="search-box !pl-10 !pr-10"
         :placeholder="placeholder"
         :value="inputValue"
-        aria-label="搜索站内导航"
+        :aria-label="t('search.inputAria')"
         autocomplete="off"
         spellcheck="false"
         role="combobox"
@@ -334,15 +345,15 @@ function onAddEngine() {
         type="button"
         @click="clearInput"
         class="absolute right-2.5 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center text-surface-300 dark:text-surface-500 hover:text-surface-500 dark:hover:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors z-10"
-        aria-label="清空搜索"
-        title="清空（Esc）"
+        :aria-label="t('search.clear')"
+        :title="t('search.clearTitle')"
       >
         <Icon icon="mdi:close" class="text-sm" />
       </button>
       <kbd
         v-else-if="activeEngine === 'site'"
         class="hidden sm:flex absolute right-3.5 top-1/2 -translate-y-1/2 items-center px-1.5 py-0.5 rounded border border-surface-200 dark:border-surface-700 text-[10px] leading-none text-surface-300 dark:text-surface-500 pointer-events-none select-none"
-        title="按 / 快速聚焦搜索框"
+        :title="t('search.focusHint')"
       >/</kbd>
       <div
         v-else
@@ -355,24 +366,24 @@ function onAddEngine() {
         v-if="dropdownVisible"
         class="absolute left-0 right-0 top-full mt-1.5 z-50 rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-900 shadow-lg shadow-surface-900/5 overflow-hidden text-left"
         role="listbox"
-        aria-label="搜索建议"
+        :aria-label="t('search.suggestionsAria')"
       >
         <template v-for="(s, i) in suggestions" :key="`${s.kind}:${s.text}`">
           <div
             v-if="s.kind === 'history' && (i === 0 || suggestions[i - 1].kind !== 'history')"
             class="flex items-center justify-between px-3 pt-2 pb-0.5 text-[10px] text-surface-300 dark:text-surface-600"
           >
-            <span>搜索历史</span>
+            <span>{{ t('search.history') }}</span>
             <button
               type="button"
               class="hover:text-accent-600 dark:hover:text-accent-400 transition-colors"
               @mousedown.prevent.stop="clearHistory"
-            >清空</button>
+            >{{ t('common.clear') }}</button>
           </div>
           <p
             v-else-if="s.kind === 'term' && (i === 0 || suggestions[i - 1].kind === 'history' || suggestions[i - 1].kind === 'site') && !suggestions.slice(0, i).some(x => x.kind === 'term')"
             class="px-3 pt-2 pb-0.5 text-[10px] text-surface-300 dark:text-surface-600"
-          >热门搜索</p>
+          >{{ t('search.hot') }}</p>
           <div
             class="group flex items-center gap-2 px-3 py-1.5 cursor-pointer text-xs"
             :class="i === activeSuggest ? 'bg-accent-50 dark:bg-accent-500/10' : ''"
@@ -398,7 +409,7 @@ function onAddEngine() {
               v-if="s.kind === 'history'"
               type="button"
               class="ml-auto shrink-0 p-0.5 rounded text-surface-300 dark:text-surface-500 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-              :aria-label="`删除历史 ${s.text}`"
+              :aria-label="t('search.deleteHistory', { text: s.text })"
               @mousedown.prevent.stop="removeHistory(s.text)"
             >
               <Icon icon="mdi:close" class="text-xs block" />

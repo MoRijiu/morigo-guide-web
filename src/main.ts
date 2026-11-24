@@ -14,12 +14,12 @@ import App from './App.vue'
 import './style.css'
 import { applyThemePrefs } from './composables/useThemePrefs'
 import { registerServiceWorker } from './composables/usePwa'
+import { initLocale } from './i18n'
 
 // 挂载前先把主题偏好（强调色/背景/毛玻璃）落到 <html> 数据属性，避免首屏闪烁
 applyThemePrefs()
-import siteConfig from './config/site'
-
-document.title = `${siteConfig.title}${siteConfig.titleHighlight} - ${siteConfig.tagline}`
+// 语言偏好落 <html lang> 与 document.title（标题随语言走）
+initLocale()
 
 createApp(App).mount('#app')
 

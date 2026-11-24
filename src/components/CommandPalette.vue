@@ -4,6 +4,9 @@ import { Icon } from '@iconify/vue'
 import DynamicIcon from './DynamicIcon.vue'
 import { fuzzyScoreFields } from '../utils/fuzzy'
 import type { NavItem } from '../types'
+import { useI18n } from '../i18n'
+
+const { t } = useI18n()
 
 export interface PaletteEntry {
   kind: 'site' | 'action' | 'category'
@@ -103,9 +106,9 @@ function onKeydown(e: KeyboardEvent) {
 }
 
 function kindLabel(entry: PaletteEntry): string {
-  if (entry.kind === 'action') return '命令'
-  if (entry.kind === 'category') return '分类'
-  return entry.categoryName ?? '站点'
+  if (entry.kind === 'action') return t('palette.kindAction')
+  if (entry.kind === 'category') return t('palette.kindCategory')
+  return entry.categoryName ?? t('palette.kindSite')
 }
 </script>
 
@@ -115,7 +118,7 @@ function kindLabel(entry: PaletteEntry): string {
     class="fixed inset-0 z-[70] flex items-start justify-center px-4 pt-[12vh] bg-surface-950/40 backdrop-blur-[2px]"
     role="dialog"
     aria-modal="true"
-    aria-label="命令面板"
+    :aria-label="t('palette.aria')"
     @click.self="emit('close')"
   >
     <div class="w-full max-w-lg rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-900 shadow-2xl overflow-hidden">
@@ -125,9 +128,9 @@ function kindLabel(entry: PaletteEntry): string {
           ref="inputRef"
           v-model="query"
           type="text"
-          placeholder="搜索站点，或输入命令…"
+          :placeholder="t('palette.placeholder')"
           class="flex-1 py-3 text-sm bg-transparent outline-none text-surface-800 dark:text-surface-100 placeholder:text-surface-300 dark:placeholder:text-surface-600"
-          aria-label="命令面板搜索"
+          :aria-label="t('palette.searchAria')"
           @keydown="onKeydown"
         />
         <kbd class="kbd-hint shrink-0">Esc</kbd>
@@ -156,14 +159,14 @@ function kindLabel(entry: PaletteEntry): string {
           <span class="text-[10px] px-1.5 py-0.5 rounded bg-surface-100 dark:bg-surface-800 text-surface-400 dark:text-surface-500 shrink-0">{{ kindLabel(entry) }}</span>
         </button>
         <p v-if="!results.length" class="px-3.5 py-6 text-center text-xs text-surface-400 dark:text-surface-500">
-          没有匹配「{{ query }}」的站点或命令
+          {{ t('palette.empty', { q: query }) }}
         </p>
       </div>
 
       <div class="flex items-center gap-3 px-3.5 py-2 border-t border-surface-100 dark:border-surface-800 text-[10px] text-surface-300 dark:text-surface-600">
-        <span><kbd class="kbd-hint">↑</kbd><kbd class="kbd-hint">↓</kbd> 选择</span>
-        <span><kbd class="kbd-hint">Enter</kbd> 执行</span>
-        <span class="ml-auto flex items-center gap-1"><Icon icon="mdi:apple-keyboard-command" class="text-[11px]" />K 呼出</span>
+        <span><kbd class="kbd-hint">↑</kbd><kbd class="kbd-hint">↓</kbd> {{ t('palette.select') }}</span>
+        <span><kbd class="kbd-hint">Enter</kbd> {{ t('palette.run') }}</span>
+        <span class="ml-auto flex items-center gap-1"><Icon icon="mdi:apple-keyboard-command" class="text-[11px]" />{{ t('palette.openHint') }}</span>
       </div>
     </div>
   </div>
