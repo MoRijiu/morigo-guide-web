@@ -19,6 +19,7 @@ import DataTransfer from './components/DataTransfer.vue'
 import ThemePanel from './components/ThemePanel.vue'
 import { useThemePrefs } from './composables/useThemePrefs'
 import CommandPalette, { type PaletteEntry } from './components/CommandPalette.vue'
+import { usePwa } from './composables/usePwa'
 import { categoryAnchorId } from './utils/slug'
 import { buildBackup, downloadBackup } from './utils/dataTransfer'
 import type { NavItem, NavCategory } from './types'
@@ -118,6 +119,8 @@ const displayCategories = computed<NavCategory[]>(() =>
     ? filteredCategories.value
     : [...personalCategories.value, ...filteredCategories.value]
 )
+
+const { canInstall, isOnline, promptInstall } = usePwa()
 
 const { customEngines, suggestionsOpen } = useSearchExtras()
 const { cycleAccent } = useThemePrefs()
@@ -284,6 +287,9 @@ const paletteEntries = computed<PaletteEntry[]>(() => {
     { kind: 'action', id: 'action:top', title: '回到顶部', icon: 'mdi:arrow-up', actionId: 'back-to-top' },
     { kind: 'action', id: 'action:view', title: '切换网格 / 列表视图', icon: 'mdi:view-grid-outline', actionId: 'toggle-view' },
     { kind: 'action', id: 'action:accent', title: '切换强调色', hint: '紫罗兰 / 湖蓝 / 晴空 / 翠绿 / 琥珀 / 玫红', icon: 'mdi:palette-outline', actionId: 'cycle-accent' },
+    ...(canInstall.value
+      ? [{ kind: 'action', id: 'action:install', title: '安装应用（PWA）', hint: '装到桌面/主屏幕，离线可用', icon: 'mdi:download', actionId: 'install-app' } as PaletteEntry]
+      : []),
   ]
   const sites: PaletteEntry[] = []
   const seen = new Set<string>()
@@ -354,6 +360,8 @@ async function onPalettePick(entry: PaletteEntry) {
       setView(view.value === 'grid' ? 'list' : 'grid')
     } else if (entry.actionId === 'cycle-accent') {
       cycleAccent()
+    } else if (entry.actionId === 'install-app') {
+      void promptInstall()
     }
   }
 }
@@ -399,6 +407,15 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onGlobalKeydown, tru
         >
           <Icon icon="mdi:plus" class="text-sm" />
           添加站点
+        </button>
+        <button
+          v-if="canInstall"
+          type="button"
+          class="flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium border border-surface-200 dark:border-surface-700 text-surface-600 dark:text-surface-300 hover:border-accent-400 hover:text-accent-600 dark:hover:text-accent-400 transition-colors"
+          @click="promptInstall"
+        >
+          <Icon icon="mdi:download" class="text-sm" />
+          安装应用
         </button>
         <DataTransfer />
         <ThemePanel />
@@ -543,6 +560,15 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onGlobalKeydown, tru
         </span>
       </div>
     </footer>
+
+    <div
+      v-if="!isOnline"
+      role="status"
+      class="fixed bottom-4 left-4 z-50 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-surface-800/90 dark:bg-surface-100/90 text-white dark:text-surface-900 shadow-lg backdrop-blur"
+    >
+      <span class="w-1.5 h-1.5 rounded-full bg-amber-400" aria-hidden="true" />
+      当前离线 · 已缓存内容可继续浏览
+    </div>
 
     <BackToTop />
     <CommandPalette :open="paletteOpen" :entries="paletteEntries" @close="paletteOpen = false" @pick="onPalettePick" />
