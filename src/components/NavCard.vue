@@ -18,6 +18,10 @@ const props = defineProps<{
   active?: boolean
   /** 所属分类名，用于判断是否为用户自定义条目 */
   categoryName?: string
+  /** 布局：grid 网格卡片 / list 单列列表（列表态额外显示域名） */
+  layout?: 'grid' | 'list'
+  /** 密度：comfortable 舒适 / compact 紧凑 */
+  density?: 'comfortable' | 'compact'
 }>()
 
 const emit = defineEmits<{
@@ -56,6 +60,14 @@ function onRemove(e: Event) {
 const copied = ref(false)
 let copyTimer: ReturnType<typeof setTimeout> | undefined
 
+const host = computed(() => {
+  try {
+    return new URL(props.item.url).hostname
+  } catch {
+    return ''
+  }
+})
+
 const itemId = computed(() => `nav-${toSlug(props.item.title)}`)
 const tint = computed(() => iconTint(props.item.title))
 const enterDelay = computed(() => `${Math.min(props.index ?? 0, 8) * 30}ms`)
@@ -88,12 +100,15 @@ async function onCopyLink(e: Event) {
     target="_blank"
     rel="noopener noreferrer"
     class="nav-card group scroll-mt-32"
-    :class="active ? 'ring-2 ring-accent-400/70 dark:ring-accent-500/70 !border-accent-300 dark:!border-accent-500/50' : ''"
+    :class="[
+      active ? 'ring-2 ring-accent-400/70 dark:ring-accent-500/70 !border-accent-300 dark:!border-accent-500/50' : '',
+      density === 'compact' ? 'nav-card-compact' : '',
+    ]"
     :style="{ animationDelay: enterDelay }"
     @click="recordVisit(item.url)"
   >
-    <div :class="['w-9 h-9 rounded-md flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-105', tint.bg]">
-      <DynamicIcon :icon="item.icon" :class="'text-lg ' + tint.text" />
+    <div :class="['rounded-md flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-105', tint.bg, density === 'compact' ? 'w-8 h-8' : 'w-9 h-9']">
+      <DynamicIcon :icon="item.icon" :class="(density === 'compact' ? 'text-base ' : 'text-lg ') + tint.text" />
     </div>
     <div class="min-w-0 flex-1">
       <h3 class="text-[13px] font-medium text-surface-700 dark:text-surface-200 truncate group-hover:text-accent-600 dark:group-hover:text-accent-400 transition-colors duration-200">
@@ -104,6 +119,7 @@ async function onCopyLink(e: Event) {
         <HighlightText :text="item.description" :keyword="keyword" />
       </p>
     </div>
+    <span v-if="layout === 'list' && host" class="hidden md:block shrink-0 self-center text-[11px] text-surface-300 dark:text-surface-600 max-w-[180px] truncate">{{ host }}</span>
     <span class="flex items-center gap-0.5 shrink-0 self-start">
       <button
         v-if="isCustom"
