@@ -68,6 +68,21 @@
   html.dark[data-bg='forest'] body { background-image: linear-gradient(160deg, rgba(16, 185, 129, 0.18), rgba(20, 184, 166, 0.10) 45%, transparent 78%); }
   html.dark[data-bg='aurora'] body { background-image: linear-gradient(150deg, rgba(139, 92, 246, 0.20), rgba(14, 165, 233, 0.14) 40%, rgba(244, 114, 182, 0.11) 75%, transparent); }
 
+  /* 自定义本地图片背景：fixed 伪元素层承载图片（--custom-bg-image 由
+     useCustomBg 从 IndexedDB 读回后注入），--bg-image-opacity 控制淡化强度，
+     保证图片再花哨也不影响内容可读性；无图时该层不渲染、回退纯色底 */
+  html[data-bg='custom'] body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background-image: var(--custom-bg-image, none);
+    background-size: cover;
+    background-position: center;
+    opacity: var(--bg-image-opacity, 0.65);
+    pointer-events: none;
+  }
+
   body {
     @apply bg-surface-50 text-surface-900 dark:bg-surface-950 dark:text-surface-100;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;

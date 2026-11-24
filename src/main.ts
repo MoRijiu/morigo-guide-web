@@ -13,11 +13,14 @@ import '@fontsource/space-grotesk/latin-700.css'
 import App from './App.vue'
 import './style.css'
 import { applyThemePrefs } from './composables/useThemePrefs'
+import { initCustomBg } from './composables/useCustomBg'
 import { registerServiceWorker } from './composables/usePwa'
 import { initLocale } from './i18n'
 
 // 挂载前先把主题偏好（强调色/背景/毛玻璃）落到 <html> 数据属性，避免首屏闪烁
 applyThemePrefs()
+// 自定义背景图存 IndexedDB（异步）：尽早读回并注入 CSS 变量
+void initCustomBg()
 // 语言偏好落 <html lang> 与 document.title（标题随语言走）
 initLocale()
 
