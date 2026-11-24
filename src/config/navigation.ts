@@ -145,7 +145,7 @@ export const mockNavigation: NavCategory[] = [
         title: 'Figma',
         description: '在线协作设计工具',
         url: 'https://www.figma.com',
-        icon: 'mdi:figma',
+        icon: 'simple-icons:figma',
         aliases: ['设计', '原型'],
         hot: true,
       },
