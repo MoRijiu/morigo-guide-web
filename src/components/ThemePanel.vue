@@ -7,7 +7,7 @@ import { useI18n } from '../i18n'
 
 const { t } = useI18n()
 
-const { accent, bg, glass, bgDim, setAccent, setBg, setGlass, setBgDim } = useThemePrefs()
+const { accent, bg, glass, bgDim, bgBlur, bgFixed, setAccent, setBg, setGlass, setBgDim, setBgBlur, setBgFixed } = useThemePrefs()
 const { customBgUrl, setCustomBg, clearCustomBg } = useCustomBg()
 
 const open = ref(false)
@@ -172,6 +172,41 @@ onBeforeUnmount(() => {
             @input="setBgDim(Number(($event.target as HTMLInputElement).value))"
           />
           <span class="text-[11px] text-surface-400 w-8 text-right">{{ bgDim }}%</span>
+        </div>
+        <div v-if="customBgUrl" class="flex items-center gap-2 mt-2">
+          <span class="text-[11px] text-surface-500 dark:text-surface-400 shrink-0">{{ t('theme.bgBlur') }}</span>
+          <input
+            type="range"
+            min="0"
+            max="20"
+            step="2"
+            :value="bgBlur"
+            class="w-full accent-accent-500 h-1"
+            :aria-label="t('theme.bgBlur')"
+            @input="setBgBlur(Number(($event.target as HTMLInputElement).value))"
+          />
+          <span class="text-[11px] text-surface-400 w-8 text-right">{{ bgBlur }}px</span>
+        </div>
+        <div v-if="customBgUrl" class="flex items-center gap-2 mt-2">
+          <span class="text-[11px] text-surface-500 dark:text-surface-400 shrink-0">{{ t('theme.bgMode') }}</span>
+          <div class="flex rounded-md border border-surface-200 dark:border-surface-700 overflow-hidden" role="radiogroup" :aria-label="t('theme.bgMode')">
+            <button
+              type="button"
+              role="radio"
+              :aria-checked="bgFixed"
+              class="px-2 py-1 text-[11px] transition-colors"
+              :class="bgFixed ? 'bg-accent-50 dark:bg-accent-500/10 text-accent-600 dark:text-accent-400' : 'text-surface-500 dark:text-surface-400'"
+              @click="setBgFixed(true)"
+            >{{ t('theme.bgFixed') }}</button>
+            <button
+              type="button"
+              role="radio"
+              :aria-checked="!bgFixed"
+              class="px-2 py-1 text-[11px] transition-colors"
+              :class="!bgFixed ? 'bg-accent-50 dark:bg-accent-500/10 text-accent-600 dark:text-accent-400' : 'text-surface-500 dark:text-surface-400'"
+              @click="setBgFixed(false)"
+            >{{ t('theme.bgScroll') }}</button>
+          </div>
         </div>
         <p v-if="bgError" class="mt-1.5 text-[11px] text-red-500" role="alert">{{ bgError }}</p>
         <p class="mt-1.5 text-[11px] text-surface-300 dark:text-surface-600">{{ t('theme.bgHint') }}</p>

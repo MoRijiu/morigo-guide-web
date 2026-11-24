@@ -44,6 +44,10 @@ interface ThemePrefs {
   glass: boolean
   /** 自定义图片背景的淡化强度 0–70（%）：越大图片越淡、内容越易读 */
   bgDim: number
+  /** 自定义图片背景的模糊强度 0–20（px） */
+  bgBlur: number
+  /** 自定义图片背景是否固定（false = 随页面滚动） */
+  bgFixed: boolean
 }
 
 function clampDim(v: unknown): number {
@@ -51,8 +55,13 @@ function clampDim(v: unknown): number {
   return Math.min(70, Math.max(0, n))
 }
 
+function clampBlur(v: unknown): number {
+  const n = typeof v === 'number' && Number.isFinite(v) ? Math.round(v) : 0
+  return Math.min(20, Math.max(0, n))
+}
+
 function load(): ThemePrefs {
-  const fallback: ThemePrefs = { accent: 'violet', bg: 'none', glass: false, bgDim: 35 }
+  const fallback: ThemePrefs = { accent: 'violet', bg: 'none', glass: false, bgDim: 35, bgBlur: 0, bgFixed: true }
   try {
     const raw = localStorage.getItem(KEY)
     if (!raw) return fallback
@@ -63,6 +72,8 @@ function load(): ThemePrefs {
       bg: BACKGROUNDS.some((b) => b.id === p.bg) ? (p.bg as string) : 'none',
       glass: p.glass === true,
       bgDim: clampDim(p.bgDim),
+      bgBlur: clampBlur(p.bgBlur),
+      bgFixed: p.bgFixed !== false,
     }
   } catch {
     return fallback
@@ -74,6 +85,8 @@ const accent = ref(initial.accent)
 const bg = ref(initial.bg)
 const glass = ref(initial.glass)
 const bgDim = ref(initial.bgDim)
+const bgBlur = ref(initial.bgBlur)
+const bgFixed = ref(initial.bgFixed)
 
 function apply() {
   if (typeof document === 'undefined') return
@@ -81,15 +94,24 @@ function apply() {
   el.dataset.accent = accent.value
   el.dataset.bg = bg.value
   el.dataset.glass = glass.value ? 'true' : 'false'
+  el.dataset.bgFixed = bgFixed.value ? 'true' : 'false'
   // 自定义图片层的不透明度 = 1 - 淡化强度
   el.style.setProperty('--bg-image-opacity', String(1 - bgDim.value / 100))
+  el.style.setProperty('--bg-image-blur', `${bgBlur.value}px`)
 }
 
 function save() {
   try {
     localStorage.setItem(
       KEY,
-      JSON.stringify({ accent: accent.value, bg: bg.value, glass: glass.value, bgDim: bgDim.value })
+      JSON.stringify({
+        accent: accent.value,
+        bg: bg.value,
+        glass: glass.value,
+        bgDim: bgDim.value,
+        bgBlur: bgBlur.value,
+        bgFixed: bgFixed.value,
+      })
     )
   } catch {
     // 隐私模式等存储不可用时仅内存态生效
@@ -135,5 +157,17 @@ export function useThemePrefs() {
     save()
   }
 
-  return { accent, bg, glass, bgDim, setAccent, cycleAccent, setBg, setGlass, setBgDim }
+  function setBgBlur(v: number) {
+    bgBlur.value = clampBlur(v)
+    apply()
+    save()
+  }
+
+  function setBgFixed(v: boolean) {
+    bgFixed.value = v
+    apply()
+    save()
+  }
+
+  return { accent, bg, glass, bgDim, bgBlur, bgFixed, setAccent, cycleAccent, setBg, setGlass, setBgDim, setBgBlur, setBgFixed }
 }
