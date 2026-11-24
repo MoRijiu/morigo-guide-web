@@ -2,18 +2,16 @@
 import { computed } from 'vue'
 import { Icon } from '@iconify/vue'
 import DynamicIcon from './DynamicIcon.vue'
+import { categoryAnchorId } from '../utils/slug'
 import type { NavCategory } from '../types'
 import NavCard from './NavCard.vue'
 
 const props = defineProps<{
   category: NavCategory
+  keyword?: string
 }>()
 
-function toSlug(str: string) {
-  return str.replace(/[\s&\/]+/g, '-').replace(/[^\w\u4e00-\u9fa5-]/g, '').toLowerCase()
-}
-
-const categoryId = computed(() => `cat-${toSlug(props.category.name)}`)
+const categoryId = computed(() => categoryAnchorId(props.category.name))
 
 function copyAnchor(id: string) {
   const url = `${location.origin}${location.pathname}#${id}`
@@ -38,7 +36,7 @@ function copyAnchor(id: string) {
       </button>
     </div>
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-      <NavCard v-for="item in category.items" :key="item.url" :item="item" />
+      <NavCard v-for="item in category.items" :key="item.url" :item="item" :keyword="keyword" />
     </div>
   </section>
 </template>

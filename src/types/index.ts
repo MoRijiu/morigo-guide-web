@@ -13,6 +13,10 @@ export interface NavItem {
   description: string
   url: string
   icon: IconValue
+  /** 搜索别名：拼音、简称、中文译名等，命中同样算匹配（高亮只作用于标题/描述） */
+  aliases?: string[]
+  /** 热门推荐：无搜索结果时在空状态里推荐 */
+  hot?: boolean
 }
 
 export interface NavCategory {
