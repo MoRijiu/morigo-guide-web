@@ -10,7 +10,8 @@ import NavCard from './components/NavCard.vue'
 import BackToTop from './components/BackToTop.vue'
 import siteConfig from './config/site'
 import { APP_VERSION_LABEL } from './version'
-import type { NavItem } from './types'
+import { useUserData } from './composables/useUserData'
+import type { NavItem, NavCategory } from './types'
 
 const keyword = ref('')
 const trimmedKeyword = computed(() => keyword.value.trim())
@@ -41,6 +42,38 @@ const resultCount = computed(() =>
   filteredCategories.value.reduce((sum, cat) => sum + cat.items.length, 0)
 )
 
+const { favorites, recent, clearRecent } = useUserData()
+
+const itemByUrl = computed(() => {
+  const map = new Map<string, NavItem>()
+  for (const cat of siteConfig.navigation) {
+    for (const item of cat.items) map.set(item.url, item)
+  }
+  return map
+})
+
+function pickItems(urls: string[]): NavItem[] {
+  return urls
+    .map((u) => itemByUrl.value.get(u))
+    .filter((x): x is NavItem => Boolean(x))
+}
+
+/** 无搜索词时置顶的个人分组：我的收藏、最近访问（为空则不出现） */
+const personalCategories = computed<NavCategory[]>(() => {
+  const cats: NavCategory[] = []
+  const favItems = pickItems(favorites.value)
+  if (favItems.length) cats.push({ name: '我的收藏', icon: 'mdi:star', items: favItems })
+  const recentItems = pickItems(recent.value)
+  if (recentItems.length) cats.push({ name: '最近访问', icon: 'mdi:history', items: recentItems })
+  return cats
+})
+
+const displayCategories = computed<NavCategory[]>(() =>
+  trimmedKeyword.value
+    ? filteredCategories.value
+    : [...personalCategories.value, ...filteredCategories.value]
+)
+
 const externalEngines = computed(() =>
   siteConfig.search.engines.filter((e) => e.key !== 'site' && e.url)
 )
@@ -68,18 +101,20 @@ function onSearch(val: string) {
     </div>
 
     <main class="flex-1 max-w-6xl w-full mx-auto px-5 sm:px-8 pb-14">
-      <CategoryNav :categories="filteredCategories" />
+      <CategoryNav :categories="displayCategories" />
 
       <p v-if="trimmedKeyword && filteredCategories.length" class="text-xs text-surface-400 dark:text-surface-500 mb-5">
         找到 <span class="text-accent-600 dark:text-accent-400 font-medium">{{ resultCount }}</span> 个与「{{ trimmedKeyword }}」相关的导航
       </p>
 
-      <template v-if="filteredCategories.length">
+      <template v-if="displayCategories.length">
         <CategorySection
-          v-for="category in filteredCategories"
+          v-for="category in displayCategories"
           :key="category.name"
           :category="category"
           :keyword="trimmedKeyword"
+          :clear-label="!trimmedKeyword && category.name === '最近访问' ? '清空' : undefined"
+          @clear="clearRecent"
         />
       </template>
 
