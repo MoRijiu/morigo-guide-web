@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, ref, onBeforeUnmount } from 'vue'
+import { computed, ref, onBeforeUnmount, onMounted } from 'vue'
 import { Icon } from '@iconify/vue'
 import DynamicIcon from './DynamicIcon.vue'
+import CategoryIconPicker from './CategoryIconPicker.vue'
 import { categoryAnchorId } from '../utils/slug'
 import type { NavCategory } from '../types'
 import NavCard from './NavCard.vue'
@@ -24,6 +25,8 @@ const props = defineProps<{
   collapsed?: boolean
   /** 是否可拖拽排序（收藏分组 / 纯自定义分类） */
   sortable?: boolean
+  /** 是否可更换分类图标（纯自定义分类） */
+  customIconEditable?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -32,7 +35,34 @@ const emit = defineEmits<{
   remove: [payload: { categoryName: string; item: NavItem }]
   'toggle-collapse': []
   reorder: [urls: string[]]
+  'update-icon': [icon: string]
 }>()
+
+// ==================== 分类图标更换（仅纯自定义分类） ====================
+const iconPickerOpen = ref(false)
+const iconPickerRef = ref<HTMLElement | null>(null)
+
+function onDocPointerDown(e: PointerEvent) {
+  if (iconPickerOpen.value && iconPickerRef.value && !iconPickerRef.value.contains(e.target as Node)) {
+    iconPickerOpen.value = false
+  }
+}
+function onDocKeyDown(e: KeyboardEvent) {
+  if (e.key === 'Escape') iconPickerOpen.value = false
+}
+onMounted(() => {
+  document.addEventListener('pointerdown', onDocPointerDown)
+  document.addEventListener('keydown', onDocKeyDown)
+})
+onBeforeUnmount(() => {
+  document.removeEventListener('pointerdown', onDocPointerDown)
+  document.removeEventListener('keydown', onDocKeyDown)
+})
+
+function onPickIcon(icon: string) {
+  emit('update-icon', icon)
+  iconPickerOpen.value = false
+}
 
 // ==================== 拖拽排序（指针事件，鼠标/触屏通用） ====================
 const listRef = ref<HTMLElement | null>(null)
@@ -136,7 +166,25 @@ function copyAnchor(id: string) {
       >
         <Icon :icon="collapsed ? 'mdi:chevron-right' : 'mdi:chevron-down'" class="text-base" />
       </button>
-      <DynamicIcon :icon="category.icon" class="text-accent-500 dark:text-accent-400 text-base" />
+      <span v-if="customIconEditable" ref="iconPickerRef" class="relative inline-flex">
+        <button
+          type="button"
+          class="inline-flex rounded p-0.5 -m-0.5 hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors"
+          :aria-label="t('section.changeIcon')"
+          :title="t('section.changeIcon')"
+          :aria-expanded="iconPickerOpen"
+          @click="iconPickerOpen = !iconPickerOpen"
+        >
+          <DynamicIcon :icon="category.icon" class="text-accent-500 dark:text-accent-400 text-base" />
+        </button>
+        <span
+          v-if="iconPickerOpen"
+          class="absolute left-0 top-full mt-1.5 z-50 block w-60 max-w-[78vw] p-2 rounded-xl bg-white dark:bg-surface-900 border border-surface-100 dark:border-surface-800 shadow-xl"
+        >
+          <CategoryIconPicker :model-value="category.icon" @update:model-value="onPickIcon" />
+        </span>
+      </span>
+      <DynamicIcon v-else :icon="category.icon" class="text-accent-500 dark:text-accent-400 text-base" />
       <a :href="'#' + categoryId" class="text-sm font-semibold text-surface-600 dark:text-surface-300 tracking-wide hover:text-accent-600 dark:hover:text-accent-400 transition-colors">
         {{ catName(category) }}
       </a>

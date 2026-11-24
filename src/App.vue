@@ -48,7 +48,7 @@ function matches(item: NavItem, k: string): boolean {
   )
 }
 
-const { customCategories, addItem, updateItem, removeItem, importCategories, setCustomOrder } = useCustomData()
+const { customCategories, addItem, updateItem, removeItem, importCategories, setCustomOrder, setCategoryIcon } = useCustomData()
 const customCategoriesRef = customCategories
 
 /**
@@ -93,10 +93,7 @@ const { favorites, recent, clearRecent, recordVisit, importUserData, setFavorite
 function isSortableCategory(category: NavCategory): boolean {
   if (trimmedKeyword.value) return false
   if (category.name === t('cat.favorites')) return true
-  const isCustomOnly =
-    customCategories.value.some((c) => c.name === category.name) &&
-    !siteConfig.navigation.some((c) => c.name === category.name)
-  return isCustomOnly
+  return isCustomOnlyCategory(category)
 }
 
 function onReorder(categoryName: string, urls: string[]) {
@@ -217,18 +214,27 @@ function openEditForm(payload: { categoryName: string; item: NavItem }) {
   formOpen.value = true
 }
 
-function onFormSave(payload: { categoryName: string; item: NavItem }) {
+function onFormSave(payload: { categoryName: string; item: NavItem; categoryIcon?: string }) {
   if (formInitial.value) {
     updateItem(
       formInitial.value.categoryName,
       formInitial.value.item.url,
       payload.categoryName,
-      payload.item
+      payload.item,
+      payload.categoryIcon
     )
   } else {
-    addItem(payload.categoryName, payload.item)
+    addItem(payload.categoryName, payload.item, payload.categoryIcon)
   }
   formOpen.value = false
+}
+
+/** 纯自定义分类（未并入默认分类）：可拖拽排序、可改分类图标 */
+function isCustomOnlyCategory(category: NavCategory): boolean {
+  return (
+    customCategories.value.some((c) => c.name === category.name) &&
+    !siteConfig.navigation.some((c) => c.name === category.name)
+  )
 }
 
 function onRemoveItem(payload: { categoryName: string; item: NavItem }) {
@@ -563,7 +569,9 @@ onBeforeUnmount(() => {
           :density="density"
           :collapsed="!trimmedKeyword && isCollapsed(category.name)"
           :sortable="isSortableCategory(category)"
+          :custom-icon-editable="!trimmedKeyword && isCustomOnlyCategory(category)"
           @reorder="onReorder(category.name, $event)"
+          @update-icon="setCategoryIcon(category.name, $event)"
           @toggle-collapse="toggleCollapsed(category.name)"
           @clear="clearRecent"
           @edit="openEditForm"

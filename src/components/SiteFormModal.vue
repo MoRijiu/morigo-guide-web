@@ -5,6 +5,8 @@ import { normalizeUrl } from '../composables/useCustomData'
 import type { NavItem } from '../types'
 import { useI18n } from '../i18n'
 import siteConfig from '../config/site'
+import CategoryIconPicker from './CategoryIconPicker.vue'
+import { DEFAULT_CATEGORY_ICON } from '../utils/categoryIcons'
 
 const { t, catName } = useI18n()
 
@@ -23,7 +25,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  save: [payload: { categoryName: string; item: NavItem }]
+  save: [payload: { categoryName: string; item: NavItem; categoryIcon?: string }]
   close: []
 }>()
 
@@ -35,6 +37,7 @@ const description = ref('')
 const icon = ref('')
 const categoryChoice = ref('')
 const newCategory = ref('')
+const newCategoryIcon = ref(DEFAULT_CATEGORY_ICON)
 const error = ref('')
 const titleRef = ref<HTMLInputElement | null>(null)
 
@@ -57,6 +60,7 @@ watch(
       categoryChoice.value = props.categoryNames[0] ?? NEW_CATEGORY
     }
     newCategory.value = ''
+    newCategoryIcon.value = DEFAULT_CATEGORY_ICON
     nextTick(() => titleRef.value?.focus())
   }
 )
@@ -80,6 +84,7 @@ function onSubmit() {
   }
   emit('save', {
     categoryName: cat,
+    ...(categoryChoice.value === NEW_CATEGORY ? { categoryIcon: newCategoryIcon.value } : {}),
     item: {
       title: name,
       description: description.value.trim() || name,
@@ -174,16 +179,20 @@ function onSubmit() {
         </label>
       </div>
 
-      <label v-if="categoryChoice === NEW_CATEGORY" class="block mb-3">
-        <span class="text-xs text-surface-500 dark:text-surface-400">{{ t('form.newCatName') }}</span>
-        <input
-          v-model="newCategory"
-          type="text"
-          maxlength="20"
-          :placeholder="t('form.newCatPh')"
-          class="mt-1 w-full px-3 py-2 text-sm rounded-lg border border-surface-200 dark:border-surface-700 bg-transparent text-surface-800 dark:text-surface-100 placeholder:text-surface-300 dark:placeholder:text-surface-600 outline-none focus:border-accent-400"
-        />
-      </label>
+      <div v-if="categoryChoice === NEW_CATEGORY" class="mb-3">
+        <label class="block">
+          <span class="text-xs text-surface-500 dark:text-surface-400">{{ t('form.newCatName') }}</span>
+          <input
+            v-model="newCategory"
+            type="text"
+            maxlength="20"
+            :placeholder="t('form.newCatPh')"
+            class="mt-1 w-full px-3 py-2 text-sm rounded-lg border border-surface-200 dark:border-surface-700 bg-transparent text-surface-800 dark:text-surface-100 placeholder:text-surface-300 dark:placeholder:text-surface-600 outline-none focus:border-accent-400"
+          />
+        </label>
+        <p class="text-xs text-surface-500 dark:text-surface-400 mt-3 mb-1.5">{{ t('form.catIcon') }}</p>
+        <CategoryIconPicker v-model="newCategoryIcon" />
+      </div>
 
       <p v-if="error" class="text-xs text-red-500 mb-3" role="alert">{{ error }}</p>
       <p class="text-[11px] text-surface-400 dark:text-surface-500 mb-4">
