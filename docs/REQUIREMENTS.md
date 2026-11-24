@@ -4,7 +4,7 @@
 
 ## 1. 产品定位
 
-MoriGo 是 morijiu 的个人导航站（生产：go.morijiu.cn，测试：go.test.morijiu.cn）：一个打开就能用的网址导航页，核心价值是**快**——打开快、找得快、点开快。首要服务对象是 morijiu 本人（自有产品入口、常用工具），同时对公开访客友好。
+MoriGo 是一个开源、可自部署的网址导航站（生产：go.morijiu.cn，测试：go.test.morijiu.cn）：打开就能用，核心价值是**快**——打开快、找得快、点开快。仓库默认数据只含通用示例分类；任何部署者（含维护者本人）的私人站点清单走 gitignored 的 `src/config/navigation.local.ts` 本地覆盖，构建时合并置顶，不进仓库。
 
 设计原则：
 
@@ -32,6 +32,7 @@ MoriGo 是 morijiu 的个人导航站（生产：go.morijiu.cn，测试：go.tes
 | R4 | 美观 | 视觉 v2：卡片 hover 动效、图标品牌底色、渐入动画 |
 | R5 | 友好性 | 键盘流（`/` 聚焦、Esc 清空、方向键 + 回车打开）、空状态文案、无障碍（aria、focus 可见） |
 | R6 | 数据与打磨 | 「我的产品」分类置顶（博客 / 通行证 / 无敌刷题 / 墨记 / tools 等）、SEO/meta/OG、favicon、构建体积检查 |
+| R8 | 开源化 | 默认数据移除私人产品，改为 `navigation.local.ts` 本地覆盖机制（仓库只留 `.example` 示例），README 说明自部署清单 |
 
 ### 2.3 非目标
 

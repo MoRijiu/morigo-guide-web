@@ -34,3 +34,6 @@ pnpm-debug.log*
 *.swp
 *.swo
 *~
+
+# Personal navigation override (not committed)
+src/config/navigation.local.ts

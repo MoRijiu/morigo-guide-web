@@ -69,6 +69,16 @@ npm run build
 npm run preview
 ```
 
+## 🧩 放你自己的站点清单
+
+仓库默认数据只包含通用示例分类，不包含任何维护者的私人站点。你想把自己的产品/站点置顶展示时，不用改默认数据：
+
+1. 复制 `src/config/navigation.local.example.ts` 为 `src/config/navigation.local.ts`（该文件已加入 `.gitignore`，不会被提交）。
+2. 把里面的示例分类换成你自己的站点清单。
+3. 重新构建：本地清单存在时会自动合并并置顶；不存在时只展示默认数据。
+
+这样你 fork / 自部署时首页是你的清单，仓库本身保持干净通用。
+
 ## ⚙️ 配置说明
 
 编辑 `src/config/site.ts` 即可自定义全站：

@@ -1,5 +1,15 @@
-import type { SiteConfig } from '../types'
+import type { NavCategory, SiteConfig } from '../types'
 import { mockNavigation } from './navigation'
+
+// 个人清单（可选）：src/config/navigation.local.ts 已 gitignore，不进仓库。
+// 存在时其分类合并置顶；不存在时只用通用默认数据（他人 fork 不受影响）。
+// 用法见同目录 navigation.local.example.ts。
+const localModules = import.meta.glob<{ localNavigation?: NavCategory[]; default?: NavCategory[] }>(
+  './navigation.local.ts',
+  { eager: true },
+)
+const localNavigation: NavCategory[] =
+  Object.values(localModules).flatMap((m) => m.localNavigation ?? m.default ?? [])
 
 const siteConfig: SiteConfig = {
   // ==================== 品牌 ====================
@@ -30,7 +40,7 @@ const siteConfig: SiteConfig = {
   mock: true,
 
   // ==================== 导航数据 ====================
-  navigation: mockNavigation,
+  navigation: [...localNavigation, ...mockNavigation],
 }
 
 export default siteConfig
