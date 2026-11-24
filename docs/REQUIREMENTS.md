@@ -47,6 +47,7 @@ MoriGo 是一个开源、可自部署的网址导航站（生产：go.morijiu.cn
 | R20 | 拖拽排序 | 「我的收藏」与纯自定义分类可排序：卡片左侧拖拽手柄（指针事件，鼠标/触屏通用，移动中实时重排）+ 聚焦卡片后 Alt+↑/↓ 键盘排序；顺序写回收藏数组 / 自定义分类数据并 localStorage 持久化；并入默认分类的自定义项与「最近访问」不参与排序（顺序另有语义） |
 | R21 | 小组件区 | 工具栏下方可开关组件带：时钟/日期（秒级刷新、随语言本地化）、每日一言（本地中/英各 14 条语录库、按日期取每日一句、可手动换一句，零外网请求）、倒计时（目标日期+名称可编辑、默认下一个元旦、天数按本地日历日计算）；开关与倒计时目标存 localStorage `morigo:widgets`；命令面板加「小组件设置」动作；毛玻璃开启时组件卡同步生效 |
 | R22 | 链接体检 | 构建期脚本 `scripts/check-links.mjs`（`npm run check:links`）检查默认导航数据全部链接可达性：HEAD 优先、405/501 或失败时 GET 复核、并发 5、超时 10s；结果分可达/存疑（401/403/429，多为站点拦截脚本）/失效三档，生成报告 `docs/LINK-CHECK.md`；`--strict` 有失效链接时退出 1 可挂 CI，`--no-report` 只打控制台；纯构建期工具、不做运行时探测 |
+| R23 | 数据扩充 | 默认导航数据从 5 分类 22 站点扩充到 9 分类 51 站点：新增「AI 工具」（Claude/Gemini/DeepSeek/Perplexity/通义千问/Hugging Face/Poe）、「云服务」（AWS/Google Cloud/Azure/阿里云/Cloudflare/Supabase）、「效率工具」（Notion/Obsidian/DeepL/Canva/Todoist/Google Drive）、「影音娱乐」（YouTube/Netflix/Spotify/Twitch/豆瓣/小红书/Steam/网易云音乐）四个分类，学习资源补 Wikipedia/Coursera；全部条目带中文/拼音别名，图标经 scripts/gen-icons.mjs 本地注册（78→111），新增链接经 R22 体检脚本复核 |
 
 ### 2.3 非目标
 
