@@ -103,7 +103,7 @@ async function onFile(e: Event) {
 
     <div
       v-if="open"
-      class="absolute right-0 top-full mt-1.5 z-50 w-72 max-w-[calc(100vw-2.5rem)] rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-900 shadow-lg p-3 text-left"
+      class="absolute right-0 top-full mt-1.5 z-50 w-72 max-w-[calc(100vw-2.5rem)] max-h-[85dvh] overflow-y-auto max-sm:fixed max-sm:left-3 max-sm:right-3 max-sm:bottom-3 max-sm:top-auto max-sm:w-auto max-sm:max-w-none max-sm:max-h-[78dvh] rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-900 shadow-lg p-3 text-left"
     >
       <button
         type="button"

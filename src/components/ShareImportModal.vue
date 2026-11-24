@@ -24,7 +24,7 @@ const itemCount = computed(
   >
     <div class="absolute inset-0 bg-surface-950/40 backdrop-blur-[2px]" @click="emit('close')" />
     <div
-      class="relative w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-900 shadow-xl p-4 max-h-[85vh] overflow-y-auto"
+      class="relative w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-900 shadow-xl p-4 max-h-[85dvh] overflow-y-auto"
     >
       <div class="flex items-center gap-2">
         <Icon icon="mdi:share-variant" class="text-lg text-accent-600 dark:text-accent-400" />
