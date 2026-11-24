@@ -125,5 +125,17 @@ export function useCustomData() {
     return count
   }
 
-  return { customCategories, isCustomItem, addItem, updateItem, removeItem, importCategories }
+  /** 拖拽排序：按给定顺序重排某自定义分类内的站点（未列出的保持原相对顺序追加在后） */
+  function setCustomOrder(categoryName: string, urls: string[]) {
+    const cat = customCategories.value.find((c) => c.name === categoryName)
+    if (!cat) return
+    const byUrl = new Map(cat.items.map((i) => [i.url, i]))
+    const ordered = urls.map((u) => byUrl.get(u)).filter((x): x is NavItem => Boolean(x))
+    const rest = cat.items.filter((i) => !urls.includes(i.url))
+    cat.items = [...ordered, ...rest]
+    customCategories.value = [...customCategories.value]
+    save()
+  }
+
+  return { customCategories, isCustomItem, addItem, updateItem, removeItem, importCategories, setCustomOrder }
 }

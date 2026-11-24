@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, onBeforeUnmount } from 'vue'
 import { Icon } from '@iconify/vue'
 import DynamicIcon from './DynamicIcon.vue'
 import { categoryAnchorId } from '../utils/slug'
@@ -22,6 +22,8 @@ const props = defineProps<{
   density?: 'comfortable' | 'compact'
   /** 是否折叠（搜索态由父级强制传 false） */
   collapsed?: boolean
+  /** 是否可拖拽排序（收藏分组 / 纯自定义分类） */
+  sortable?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -29,7 +31,78 @@ const emit = defineEmits<{
   edit: [payload: { categoryName: string; item: NavItem }]
   remove: [payload: { categoryName: string; item: NavItem }]
   'toggle-collapse': []
+  reorder: [urls: string[]]
 }>()
+
+// ==================== 拖拽排序（指针事件，鼠标/触屏通用） ====================
+const listRef = ref<HTMLElement | null>(null)
+const draggingUrl = ref<string | null>(null)
+
+function currentUrls(): string[] {
+  return props.category.items.map((i) => i.url)
+}
+
+/** 把 url 移到 target 之前/之后，返回新顺序（无变化返回 null） */
+function movedOrder(url: string, targetUrl: string, after: boolean): string[] | null {
+  const urls = currentUrls()
+  const from = urls.indexOf(url)
+  const to = urls.indexOf(targetUrl)
+  if (from < 0 || to < 0 || from === to) return null
+  urls.splice(from, 1)
+  const insertAt = urls.indexOf(targetUrl) + (after ? 1 : 0)
+  if (insertAt === from) return null
+  urls.splice(insertAt, 0, url)
+  return urls
+}
+
+function onPointerMove(e: PointerEvent) {
+  const url = draggingUrl.value
+  const container = listRef.value
+  if (!url || !container) return
+  const el = (document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null)?.closest(
+    '[data-sort-url]'
+  ) as HTMLElement | null
+  if (!el || !container.contains(el)) return
+  const targetUrl = el.dataset.sortUrl
+  if (!targetUrl || targetUrl === url) return
+  const rect = el.getBoundingClientRect()
+  // 网格多列时按水平中线判断，列表单列时按垂直中线判断
+  const after =
+    props.viewMode === 'list'
+      ? e.clientY > rect.top + rect.height / 2
+      : rect.width > 140
+        ? e.clientX > rect.left + rect.width / 2
+        : e.clientY > rect.top + rect.height / 2
+  const next = movedOrder(url, targetUrl, after)
+  if (next) emit('reorder', next)
+}
+
+function endDrag() {
+  draggingUrl.value = null
+  window.removeEventListener('pointermove', onPointerMove)
+  window.removeEventListener('pointerup', endDrag)
+  window.removeEventListener('pointercancel', endDrag)
+}
+
+function onSortStart(payload: { item: NavItem }) {
+  draggingUrl.value = payload.item.url
+  window.addEventListener('pointermove', onPointerMove)
+  window.addEventListener('pointerup', endDrag)
+  window.addEventListener('pointercancel', endDrag)
+}
+
+function onSortMove(payload: { item: NavItem; delta: number }) {
+  const urls = currentUrls()
+  const idx = urls.indexOf(payload.item.url)
+  const target = idx + payload.delta
+  if (idx < 0 || target < 0 || target >= urls.length) return
+  const next = [...urls]
+  const [u] = next.splice(idx, 1)
+  next.splice(target, 0, u)
+  emit('reorder', next)
+}
+
+onBeforeUnmount(endDrag)
 
 const containerClass = computed(() => {
   if (props.viewMode === 'list') {
@@ -86,7 +159,7 @@ function copyAnchor(id: string) {
         </button>
       </span>
     </div>
-    <div v-if="!collapsed" :class="containerClass">
+    <div v-if="!collapsed" ref="listRef" :class="containerClass">
       <NavCard
         v-for="(item, idx) in category.items"
         :key="item.url"
@@ -97,9 +170,14 @@ function copyAnchor(id: string) {
         :layout="viewMode ?? 'grid'"
         :density="density ?? 'comfortable'"
         :active="activeKey === `${category.name}:${item.url}`"
+        :sortable="sortable"
+        :dragging="draggingUrl === item.url"
         @edit="emit('edit', $event)"
         @remove="emit('remove', $event)"
+        @sort-start="onSortStart"
+        @sort-move="onSortMove"
       />
     </div>
+    <p v-if="sortable && !collapsed" class="mt-1.5 text-[10px] text-surface-300 dark:text-surface-600">{{ t('section.sortHint') }}</p>
   </section>
 </template>
