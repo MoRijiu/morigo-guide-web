@@ -43,7 +43,7 @@ function matches(item: NavItem, k: string): boolean {
   )
 }
 
-const { customCategories, addItem, updateItem, removeItem, importCategories } = useCustomData()
+const { customCategories, addItem, updateItem, removeItem, importCategories, setCustomOrder } = useCustomData()
 const customCategoriesRef = customCategories
 
 /**
@@ -77,7 +77,27 @@ const resultCount = computed(() =>
   filteredCategories.value.reduce((sum, cat) => sum + cat.items.length, 0)
 )
 
-const { favorites, recent, clearRecent, recordVisit, importUserData } = useUserData()
+const { favorites, recent, clearRecent, recordVisit, importUserData, setFavoritesOrder } = useUserData()
+
+// ==================== 拖拽排序 ====================
+/**
+ * 可排序分组：①「我的收藏」（顺序即收藏数组顺序）；
+ * ②纯自定义分类（分类只来自用户自定义数据、未并入默认分类）。
+ * 并入默认分类的自定义项与「最近访问」不排序（顺序另有语义）。
+ */
+function isSortableCategory(category: NavCategory): boolean {
+  if (trimmedKeyword.value) return false
+  if (category.name === t('cat.favorites')) return true
+  const isCustomOnly =
+    customCategories.value.some((c) => c.name === category.name) &&
+    !siteConfig.navigation.some((c) => c.name === category.name)
+  return isCustomOnly
+}
+
+function onReorder(categoryName: string, urls: string[]) {
+  if (categoryName === t('cat.favorites')) setFavoritesOrder(urls)
+  else setCustomOrder(categoryName, urls)
+}
 
 // ==================== 分享链接导入 ====================
 const sharePayload = ref<SharePayload | null>(null)
@@ -530,6 +550,8 @@ onBeforeUnmount(() => {
           :view-mode="view"
           :density="density"
           :collapsed="!trimmedKeyword && isCollapsed(category.name)"
+          :sortable="isSortableCategory(category)"
+          @reorder="onReorder(category.name, $event)"
           @toggle-collapse="toggleCollapsed(category.name)"
           @clear="clearRecent"
           @edit="openEditForm"

@@ -25,12 +25,34 @@ const props = defineProps<{
   layout?: 'grid' | 'list'
   /** 密度：comfortable 舒适 / compact 紧凑 */
   density?: 'comfortable' | 'compact'
+  /** 是否可拖拽排序（收藏分组 / 纯自定义分类） */
+  sortable?: boolean
+  /** 正在被拖拽（半透明示意） */
+  dragging?: boolean
 }>()
 
 const emit = defineEmits<{
   edit: [payload: { categoryName: string; item: NavItem }]
   remove: [payload: { categoryName: string; item: NavItem }]
+  'sort-start': [payload: { item: NavItem; event: PointerEvent }]
+  'sort-move': [payload: { item: NavItem; delta: number }]
 }>()
+
+function onSortHandlePointerDown(e: PointerEvent) {
+  // 拖拽由分类容器统一处理（指针移动实时重排）；此处只上报起点并阻止链接拖拽/页面滚动干扰
+  e.preventDefault()
+  e.stopPropagation()
+  emit('sort-start', { item: props.item, event: e })
+}
+
+function onCardKeydown(e: KeyboardEvent) {
+  if (!props.sortable || !e.altKey) return
+  if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+    e.preventDefault()
+    e.stopPropagation()
+    emit('sort-move', { item: props.item, delta: e.key === 'ArrowUp' ? -1 : 1 })
+  }
+}
 
 const rootRef = ref<HTMLElement | null>(null)
 
@@ -106,10 +128,24 @@ async function onCopyLink(e: Event) {
     :class="[
       active ? 'ring-2 ring-accent-400/70 dark:ring-accent-500/70 !border-accent-300 dark:!border-accent-500/50' : '',
       density === 'compact' ? 'nav-card-compact' : '',
+      dragging ? 'opacity-50 ring-2 ring-accent-400/60' : '',
     ]"
     :style="{ animationDelay: enterDelay }"
+    :data-sort-url="sortable ? item.url : undefined"
     @click="recordVisit(item.url)"
+    @keydown="onCardKeydown"
   >
+    <span
+      v-if="sortable"
+      role="button"
+      :title="t('card.drag')"
+      :aria-label="t('card.drag')"
+      class="shrink-0 self-center -ml-1 p-0.5 rounded cursor-grab active:cursor-grabbing touch-none text-surface-300 dark:text-surface-600 hover:text-accent-500 transition-colors"
+      @pointerdown="onSortHandlePointerDown"
+      @click.prevent.stop
+    >
+      <Icon icon="mdi:drag-vertical" class="text-base block" />
+    </span>
     <div :class="['rounded-md flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-105', tint.bg, density === 'compact' ? 'w-8 h-8' : 'w-9 h-9']">
       <DynamicIcon :icon="item.icon" :class="(density === 'compact' ? 'text-base ' : 'text-lg ') + tint.text" />
     </div>

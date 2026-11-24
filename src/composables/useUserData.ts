@@ -106,5 +106,14 @@ export function useUserData() {
     save(RECENT_KEY, recent.value)
   }
 
-  return { favorites, recent, visitCounts, totalVisits, isFavorite, toggleFavorite, recordVisit, clearRecent, clearStats, importUserData }
+  /** 拖拽排序：按给定顺序重排收藏（未列出的收藏保持原相对顺序追加在后） */
+  function setFavoritesOrder(urls: string[]) {
+    const favSet = new Set(favorites.value)
+    const ordered = urls.filter((u) => favSet.has(u))
+    const rest = favorites.value.filter((u) => !ordered.includes(u))
+    favorites.value = [...ordered, ...rest]
+    save(FAV_KEY, favorites.value)
+  }
+
+  return { favorites, recent, visitCounts, totalVisits, isFavorite, toggleFavorite, recordVisit, clearRecent, clearStats, importUserData, setFavoritesOrder }
 }
