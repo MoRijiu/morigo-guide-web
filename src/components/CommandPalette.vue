@@ -3,10 +3,13 @@ import { ref, computed, watch, nextTick } from 'vue'
 import { Icon } from '@iconify/vue'
 import DynamicIcon from './DynamicIcon.vue'
 import { fuzzyScoreFields } from '../utils/fuzzy'
+import { scoreSiteForQuery } from '../utils/suggest'
+import { useUserData } from '../composables/useUserData'
 import type { NavItem } from '../types'
 import { useI18n } from '../i18n'
 
 const { t } = useI18n()
+const { favoriteSet, visitCounts } = useUserData()
 
 export interface PaletteEntry {
   kind: 'site' | 'action' | 'category'
@@ -43,13 +46,16 @@ const results = computed<PaletteEntry[]>(() => {
     return props.entries.slice(0, 12)
   }
   const scored: { entry: PaletteEntry; score: number }[] = []
+  const ctx = { favoriteUrls: favoriteSet.value, visitCounts: visitCounts.value }
   for (const entry of props.entries) {
-    const fields =
-      entry.kind === 'site' && entry.item
-        ? [entry.item.title, entry.item.description, entry.item.descriptionEn ?? '', entry.item.descriptionJa ?? '', entry.item.url, ...(entry.item.aliases ?? [])]
-        : [entry.title, entry.hint]
-    const score = fuzzyScoreFields(q, fields)
-    if (score >= 0) scored.push({ entry, score: score + (entry.kind === 'site' ? 0 : 50) })
+    if (entry.kind === 'site' && entry.item) {
+      // 站点与搜索建议共用同一套打分（R44）：多字段权重 + 收藏/访问热度，排序口径全站一致
+      const score = scoreSiteForQuery(q, entry.item, ctx)
+      if (score >= 0) scored.push({ entry, score })
+      continue
+    }
+    const score = fuzzyScoreFields(q, [entry.title, entry.hint])
+    if (score >= 0) scored.push({ entry, score: score + 50 })
   }
   return scored
     .sort((a, b) => b.score - a.score)
