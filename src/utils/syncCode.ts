@@ -13,6 +13,7 @@ export const SYNC_KEYS = [
   'morigo:favorites',
   'morigo:recent',
   'morigo:visit-counts',
+  'morigo:last-visit',
   'morigo:custom-engines',
   'morigo:search-history',
   'morigo:active-engine',

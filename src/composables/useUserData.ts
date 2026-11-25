@@ -7,6 +7,7 @@ import { ref, computed } from 'vue'
 const FAV_KEY = 'morigo:favorites'
 const RECENT_KEY = 'morigo:recent'
 const COUNTS_KEY = 'morigo:visit-counts'
+const LAST_KEY = 'morigo:last-visit'
 const RECENT_MAX = 12
 
 function load(key: string): string[] {
@@ -52,9 +53,34 @@ function saveCounts(value: Record<string, number>) {
   }
 }
 
+function loadLastVisit(): Record<string, number> {
+  try {
+    const raw = localStorage.getItem(LAST_KEY)
+    if (!raw) return {}
+    const parsed = JSON.parse(raw)
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {}
+    const out: Record<string, number> = {}
+    for (const [k, v] of Object.entries(parsed)) {
+      if (typeof v === 'number' && Number.isFinite(v) && v > 0) out[k] = Math.floor(v)
+    }
+    return out
+  } catch {
+    return {}
+  }
+}
+
+function saveLastVisit(value: Record<string, number>) {
+  try {
+    localStorage.setItem(LAST_KEY, JSON.stringify(value))
+  } catch {
+    // 同 save：静默降级
+  }
+}
+
 const favorites = ref<string[]>(load(FAV_KEY))
 const recent = ref<string[]>(load(RECENT_KEY))
 const visitCounts = ref<Record<string, number>>(loadCounts())
+const lastVisit = ref<Record<string, number>>(loadLastVisit())
 
 export function useUserData() {
   const favoriteSet = computed(() => new Set(favorites.value))
@@ -75,6 +101,8 @@ export function useUserData() {
     save(RECENT_KEY, recent.value)
     visitCounts.value = { ...visitCounts.value, [url]: (visitCounts.value[url] ?? 0) + 1 }
     saveCounts(visitCounts.value)
+    lastVisit.value = { ...lastVisit.value, [url]: Date.now() }
+    saveLastVisit(lastVisit.value)
   }
 
   const totalVisits = computed(() =>
@@ -85,6 +113,8 @@ export function useUserData() {
   function clearStats() {
     visitCounts.value = {}
     saveCounts(visitCounts.value)
+    lastVisit.value = {}
+    saveLastVisit(lastVisit.value)
     clearRecent()
   }
 
@@ -115,5 +145,5 @@ export function useUserData() {
     save(FAV_KEY, favorites.value)
   }
 
-  return { favorites, favoriteSet, recent, visitCounts, totalVisits, isFavorite, toggleFavorite, recordVisit, clearRecent, clearStats, importUserData, setFavoritesOrder }
+  return { favorites, favoriteSet, recent, visitCounts, lastVisit, totalVisits, isFavorite, toggleFavorite, recordVisit, clearRecent, clearStats, importUserData, setFavoritesOrder }
 }
