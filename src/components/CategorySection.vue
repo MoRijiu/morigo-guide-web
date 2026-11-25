@@ -31,6 +31,10 @@ const props = defineProps<{
   categorySortable?: boolean
   /** 本分类正在被拖拽重排 */
   categoryDragging?: boolean
+  /** 是否显示置顶/隐藏按钮（普通分类、非搜索态） */
+  pinnable?: boolean
+  /** 本分类是否已置顶 */
+  pinned?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -42,6 +46,8 @@ const emit = defineEmits<{
   'update-icon': [icon: string]
   'category-sort-start': []
   'category-sort-move': [delta: number]
+  'toggle-pin': []
+  'hide-category': []
 }>()
 
 // ==================== 分类重排（手柄：指针拖拽由父级统一处理，Alt+↑/↓ 键盘移动） ====================
@@ -222,7 +228,29 @@ function copyAnchor(id: string) {
         {{ catName(category) }}
       </a>
       <span class="text-[10px] text-surface-300 dark:text-surface-600 tabular-nums">{{ category.items.length }}</span>
+      <Icon v-if="pinned" icon="mdi:pin" class="text-xs text-accent-500" :title="t('section.pinnedTag')" />
       <span class="ml-auto flex items-center gap-2">
+        <button
+          v-if="pinnable"
+          type="button"
+          @click="emit('toggle-pin')"
+          :class="['transition-all', pinned ? 'text-accent-500' : 'opacity-0 group-hover/cat:opacity-100 focus-visible:opacity-100 text-surface-300 dark:text-surface-600 hover:text-accent-500']"
+          :title="pinned ? t('section.unpin') : t('section.pin')"
+          :aria-label="pinned ? t('section.unpin') : t('section.pin')"
+          :aria-pressed="pinned"
+        >
+          <Icon :icon="pinned ? 'mdi:pin-off-outline' : 'mdi:pin-outline'" class="text-sm" />
+        </button>
+        <button
+          v-if="pinnable"
+          type="button"
+          @click="emit('hide-category')"
+          class="opacity-0 group-hover/cat:opacity-100 focus-visible:opacity-100 text-surface-300 dark:text-surface-600 hover:text-accent-500 transition-all"
+          :title="t('section.hide')"
+          :aria-label="t('section.hide')"
+        >
+          <Icon icon="mdi:eye-off-outline" class="text-sm" />
+        </button>
         <button
           v-if="clearLabel"
           @click="emit('clear')"
