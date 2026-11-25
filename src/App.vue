@@ -122,6 +122,16 @@ function onReorder(categoryName: string, urls: string[]) {
   else setCustomOrder(categoryName, urls)
 }
 
+/** 跨分类拖拽移动：自定义条目拖到其他分类上松手后搬移并落盘（目标以锚点 id 解析，个人分组不在合并分类内、自然不可作落点） */
+function onMoveItemTo(sourceName: string, payload: { item: NavItem; targetAnchorId: string }) {
+  const target = orderedMergedCategories.value.find(
+    (c) => categoryAnchorId(c.name) === payload.targetAnchorId
+  )
+  if (!target || target.name === sourceName) return
+  if (!isCustomItem(sourceName, payload.item.url)) return
+  updateItem(sourceName, payload.item.url, target.name, payload.item)
+}
+
 // ==================== 分类重排 ====================
 /**
  * 分类本身可重排（个人分组「我的收藏/最近访问」置顶不动）：
@@ -730,6 +740,8 @@ onBeforeUnmount(() => {
           :density="density"
           :collapsed="!trimmedKeyword && isCollapsed(category.name)"
           :sortable="isSortableCategory(category)"
+          :cross-draggable="!trimmedKeyword"
+          @move-item-to="onMoveItemTo(category.name, $event)"
           :custom-icon-editable="!trimmedKeyword && isCustomOnlyCategory(category)"
           :category-sortable="isCategorySortable(category)"
           :category-dragging="draggingCategory === category.name"

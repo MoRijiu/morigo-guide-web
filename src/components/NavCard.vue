@@ -28,6 +28,8 @@ const props = defineProps<{
   density?: 'comfortable' | 'compact'
   /** 是否可拖拽排序（收藏分组 / 纯自定义分类） */
   sortable?: boolean
+  /** 自定义条目可跨分类拖拽移动（拖到其他分类上松手） */
+  crossDraggable?: boolean
   /** 正在被拖拽（半透明示意） */
   dragging?: boolean
 }>()
@@ -116,6 +118,10 @@ watch(
 
 const { isFavorite, toggleFavorite, recordVisit } = useUserData()
 const { isCustomItem } = useCustomData()
+/** 显示拖拽手柄：可排序，或可跨分类拖拽且本条目是自定义站点 */
+const showHandle = computed(
+  () => Boolean(props.sortable) || Boolean(props.crossDraggable && isCustom.value)
+)
 const favorited = computed(() => isFavorite(props.item.url))
 const isCustom = computed(() =>
   props.categoryName ? isCustomItem(props.categoryName, props.item.url) : false
@@ -197,7 +203,7 @@ async function onCopyLink(e: Event) {
     @pointerleave="clearLongPress"
   >
     <span
-      v-if="sortable"
+      v-if="showHandle"
       role="button"
       :title="t('card.drag')"
       :aria-label="t('card.drag')"

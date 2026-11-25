@@ -26,6 +26,8 @@ const props = defineProps<{
   collapsed?: boolean
   /** 是否可拖拽排序（收藏分组 / 纯自定义分类） */
   sortable?: boolean
+  /** 自定义条目可跨分类拖拽移动（拖到其他分类上松手移动） */
+  crossDraggable?: boolean
   /** 是否可更换分类图标（纯自定义分类） */
   customIconEditable?: boolean
   /** 本分类是否可拖拽重排（分类本身的顺序） */
@@ -50,6 +52,7 @@ const emit = defineEmits<{
   'category-sort-move': [delta: number]
   'toggle-pin': []
   'hide-category': []
+  'move-item-to': [payload: { item: NavItem; targetAnchorId: string }]
 }>()
 
 // ==================== 分类重排（手柄：指针拖拽由父级统一处理，Alt+↑/↓ 键盘移动） ====================
@@ -97,6 +100,42 @@ function onPickIcon(icon: string) {
 // ==================== 拖拽排序（指针事件，鼠标/触屏通用） ====================
 const listRef = ref<HTMLElement | null>(null)
 const draggingUrl = ref<string | null>(null)
+const draggingItem = ref<NavItem | null>(null)
+
+// ==================== 跨分类拖拽移动（仅自定义条目） ====================
+import { useCustomData } from '../composables/useCustomData'
+const { isCustomItem } = useCustomData()
+let dropSectionEl: HTMLElement | null = null
+
+function clearDropHighlight() {
+  dropSectionEl?.classList.remove('morigo-drop-target')
+  dropSectionEl = null
+}
+
+/** 拖拽点命中的其他分类 section（排除本分类），无则 null */
+function dropSectionAt(x: number, y: number): HTMLElement | null {
+  const section = (document.elementFromPoint(x, y) as HTMLElement | null)?.closest(
+    'section[id]'
+  ) as HTMLElement | null
+  if (!section || section.id === categoryId.value) return null
+  return section
+}
+
+function updateDropHighlight(e: PointerEvent) {
+  const item = draggingItem.value
+  if (!item || !props.crossDraggable || !isCustomItem(props.category.name, item.url)) return
+  const section = dropSectionAt(e.clientX, e.clientY)
+  if (section === dropSectionEl) return
+  clearDropHighlight()
+  if (section) {
+    section.classList.add('morigo-drop-target')
+    dropSectionEl = section
+  }
+}
+
+const hasCustomItems = computed(() =>
+  props.category.items.some((i) => isCustomItem(props.category.name, i.url))
+)
 
 function currentUrls(): string[] {
   return props.category.items.map((i) => i.url)
@@ -116,9 +155,10 @@ function movedOrder(url: string, targetUrl: string, after: boolean): string[] | 
 }
 
 function onPointerMove(e: PointerEvent) {
+  updateDropHighlight(e)
   const url = draggingUrl.value
   const container = listRef.value
-  if (!url || !container) return
+  if (!url || !container || !props.sortable) return
   const el = (document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null)?.closest(
     '[data-sort-url]'
   ) as HTMLElement | null
@@ -137,8 +177,16 @@ function onPointerMove(e: PointerEvent) {
   if (next) emit('reorder', next)
 }
 
-function endDrag() {
+function endDrag(e?: PointerEvent) {
+  // 松手时若正悬停在其他分类上，发出跨分类移动（落点以松手坐标为准重算一次）
+  const item = draggingItem.value
+  if (e?.type === 'pointerup' && item && props.crossDraggable && isCustomItem(props.category.name, item.url)) {
+    const section = dropSectionAt(e.clientX, e.clientY)
+    if (section) emit('move-item-to', { item, targetAnchorId: section.id })
+  }
+  clearDropHighlight()
   draggingUrl.value = null
+  draggingItem.value = null
   window.removeEventListener('pointermove', onPointerMove)
   window.removeEventListener('pointerup', endDrag)
   window.removeEventListener('pointercancel', endDrag)
@@ -146,6 +194,7 @@ function endDrag() {
 
 function onSortStart(payload: { item: NavItem }) {
   draggingUrl.value = payload.item.url
+  draggingItem.value = payload.item
   window.addEventListener('pointermove', onPointerMove)
   window.addEventListener('pointerup', endDrag)
   window.addEventListener('pointercancel', endDrag)
@@ -283,6 +332,7 @@ function copyAnchor(id: string) {
         :density="density ?? 'comfortable'"
         :active="activeKey === `${category.name}:${item.url}`"
         :sortable="sortable"
+        :cross-draggable="crossDraggable"
         :dragging="draggingUrl === item.url"
         @edit="emit('edit', $event)"
         @remove="emit('remove', $event)"
@@ -292,5 +342,6 @@ function copyAnchor(id: string) {
       />
     </div>
     <p v-if="sortable && !collapsed" class="mt-1.5 text-[10px] text-surface-300 dark:text-surface-600">{{ t('section.sortHint') }}</p>
+    <p v-else-if="crossDraggable && hasCustomItems && !collapsed" class="mt-1.5 text-[10px] text-surface-300 dark:text-surface-600">{{ t('section.crossHint') }}</p>
   </section>
 </template>
