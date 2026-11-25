@@ -151,6 +151,9 @@
 
   .nav-card::after {
     content: '';
+    /* 纯装饰罩：必须 pointer-events-none，否则作为定位伪元素会盖住卡内
+       非定位按钮（星标/复制/编辑/删除），真实鼠标点击全被卡片链接吃掉 */
+    pointer-events: none;
     @apply absolute inset-0 rounded-lg opacity-0 transition-opacity duration-200;
     background: linear-gradient(135deg, rgb(var(--accent-500) / 0.03), rgb(var(--accent-500) / 0.01));
   }

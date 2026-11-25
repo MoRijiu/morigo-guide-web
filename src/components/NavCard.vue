@@ -5,6 +5,7 @@ import DynamicIcon from './DynamicIcon.vue'
 import HighlightText from './HighlightText.vue'
 import { toSlug } from '../utils/slug'
 import { iconTint } from '../utils/iconTint'
+import { copyText } from '../utils/clipboard'
 import { useUserData } from '../composables/useUserData'
 import { useCustomData } from '../composables/useCustomData'
 import type { NavItem } from '../types'
@@ -152,16 +153,21 @@ function onToggleFavorite(e: Event) {
   toggleFavorite(props.item.url)
 }
 
+const copyFailed = ref(false)
 async function onCopyLink(e: Event) {
   e.preventDefault()
   e.stopPropagation()
-  try {
-    await navigator.clipboard.writeText(props.item.url)
+  // copyText 内含 execCommand 兜底；再失败必须给可见反馈，不许静默吞错
+  const ok = await copyText(props.item.url)
+  clearTimeout(copyTimer)
+  if (ok) {
     copied.value = true
-    clearTimeout(copyTimer)
+    copyFailed.value = false
     copyTimer = setTimeout(() => (copied.value = false), 1500)
-  } catch {
-    // 剪贴板不可用时静默忽略
+  } else {
+    copied.value = false
+    copyFailed.value = true
+    copyTimer = setTimeout(() => (copyFailed.value = false), 2500)
   }
 }
 </script>
@@ -252,17 +258,19 @@ async function onCopyLink(e: Event) {
       </button>
       <button
         type="button"
-        :title="copied ? t('card.copied') : t('card.copy')"
+        :title="copyFailed ? t('card.copyFailed') : copied ? t('card.copied') : t('card.copy')"
         :aria-label="t('card.copy')"
         @click="onCopyLink"
         :class="[
           'p-1 rounded transition-all',
           copied
             ? 'text-emerald-500 opacity-100'
-            : 'text-surface-300 dark:text-surface-600 opacity-60 sm:opacity-0 sm:group-hover:opacity-100 focus-visible:opacity-100 hover:text-accent-500',
+            : copyFailed
+              ? 'text-red-500 opacity-100'
+              : 'text-surface-300 dark:text-surface-600 opacity-60 sm:opacity-0 sm:group-hover:opacity-100 focus-visible:opacity-100 hover:text-accent-500',
         ]"
       >
-        <Icon :icon="copied ? 'mdi:check' : 'mdi:content-copy'" class="text-sm" />
+        <Icon :icon="copied ? 'mdi:check' : copyFailed ? 'mdi:alert-circle-outline' : 'mdi:content-copy'" class="text-sm" />
       </button>
     </span>
   </a>
