@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useCustomData } from '../composables/useCustomData'
 import { useUserData } from '../composables/useUserData'
@@ -11,6 +11,7 @@ import {
 } from '../utils/dataTransfer'
 import { buildShareUrl } from '../utils/share'
 import { buildSyncCode, parseSyncCode, applySyncPayload } from '../utils/syncCode'
+import { buildSyncQrDataUrl, SYNC_QR_MAX_BYTES } from '../utils/syncQr'
 import {
   loadWebDavConfig,
   saveWebDavConfig,
@@ -39,6 +40,15 @@ const fileInput = ref<HTMLInputElement | null>(null)
 
 const shareUrl = ref('')
 const syncCode = ref('')
+/** 生成出的同步码对应的二维码图（data URL）；数据超 QR 容量时置 tooLong 提示 */
+const syncQr = ref('')
+const syncQrTooLong = ref(false)
+
+// 码被手动编辑或被 WebDAV 拉取替换后，旧二维码立即作废防扫错码
+watch(syncCode, () => {
+  syncQr.value = ''
+  syncQrTooLong.value = false
+})
 /** 同步加密口令：只在本次面板会话内使用、不落盘；生成与导入/WebDAV 共用 */
 const syncPassphrase = ref('')
 
@@ -51,6 +61,10 @@ async function onGenerateSync() {
     return
   }
   syncCode.value = code
+  const qr = await buildSyncQrDataUrl(code)
+  syncQr.value = qr ?? ''
+  syncQrTooLong.value =
+    qr === null && new TextEncoder().encode(code).length > SYNC_QR_MAX_BYTES
   const ok = await copyText(code)
   message.value = encrypted
     ? ok
@@ -331,6 +345,17 @@ async function onFile(e: Event) {
           :aria-label="t('dt.syncTitle')"
           class="w-full mt-1 px-2 py-1.5 rounded-md border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 text-[11px] text-surface-500 dark:text-surface-400 break-all"
         />
+        <div v-if="syncQr" class="mt-2 flex flex-col items-center">
+          <p class="flex items-center gap-1 text-[11px] font-medium text-surface-500 dark:text-surface-400">
+            <Icon icon="mdi:qrcode" class="text-sm" />
+            {{ t('dt.syncQrTitle') }}
+          </p>
+          <div class="mt-1.5 rounded-md bg-white p-2 border border-surface-200">
+            <img :src="syncQr" :alt="t('dt.syncQrTitle')" class="w-40 h-40 block" />
+          </div>
+          <p class="px-2 mt-1.5 text-[11px] text-surface-300 dark:text-surface-600">{{ t('dt.syncQrHint') }}</p>
+        </div>
+        <p v-else-if="syncQrTooLong" class="px-2 mt-1.5 text-[11px] text-surface-300 dark:text-surface-600">{{ t('dt.syncQrTooLong') }}</p>
         <div class="relative mt-1.5">
           <Icon
             icon="mdi:lock-outline"
