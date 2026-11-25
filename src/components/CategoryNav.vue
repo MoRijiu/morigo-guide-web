@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
+import { ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import DynamicIcon from './DynamicIcon.vue'
 import { categoryAnchorId } from '../utils/slug'
 import type { NavCategory } from '../types'
@@ -13,6 +13,14 @@ const props = defineProps<{
 
 const activeId = ref('')
 let observer: IntersectionObserver | null = null
+
+// 横向滚动条隐藏（与 SearchBar 引擎行同一口径）；右侧还有内容时用 mask 渐隐提示可继续滑
+const scrollRef = ref<HTMLElement | null>(null)
+const canScrollRight = ref(false)
+function updateFade() {
+  const el = scrollRef.value
+  canScrollRight.value = !!el && el.scrollWidth - el.clientWidth - el.scrollLeft > 4
+}
 
 function observeSections() {
   observer?.disconnect()
@@ -30,11 +38,19 @@ function observeSections() {
   }
 }
 
-onMounted(observeSections)
+onMounted(() => {
+  observeSections()
+  updateFade()
+  window.addEventListener('resize', updateFade)
+})
 watch(() => props.categories.map((c) => c.name).join('|'), () => {
   requestAnimationFrame(observeSections)
+  nextTick(updateFade)
 })
-onBeforeUnmount(() => observer?.disconnect())
+onBeforeUnmount(() => {
+  observer?.disconnect()
+  window.removeEventListener('resize', updateFade)
+})
 
 function jump(name: string) {
   const id = categoryAnchorId(name)
@@ -49,7 +65,12 @@ function jump(name: string) {
     class="sticky top-14 z-40 -mx-5 sm:-mx-8 px-5 sm:px-8 py-2 mb-6 backdrop-blur-lg bg-surface-50/85 dark:bg-surface-950/85 border-b border-surface-100 dark:border-surface-800/60"
     :aria-label="t('nav.aria')"
   >
-    <div class="flex items-center gap-1.5 overflow-x-auto">
+    <div
+      ref="scrollRef"
+      @scroll="updateFade"
+      class="flex items-center gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      :class="canScrollRight && '[mask-image:linear-gradient(to_right,black_calc(100%-2.5rem),transparent)]'"
+    >
       <button
         v-for="cat in categories"
         :key="cat.name"
