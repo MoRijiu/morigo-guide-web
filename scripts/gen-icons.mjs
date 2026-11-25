@@ -45,7 +45,10 @@ for (const [prefix, names] of byPrefix) {
     const icon = data.icons[name]
     if (!icon) { missing.push(`${prefix}:${name}`); continue }
     const { hidden, ...rest } = icon
-    entries.push({ full: `${prefix}:${name}`, data: { ...rest, width: data.width, height: data.height } })
+    // Per-icon width/height (e.g. fa6-solid non-square glyphs) must win over
+    // the collection defaults, otherwise the viewBox is wrong and the glyph
+    // renders squished/off-center.
+    entries.push({ full: `${prefix}:${name}`, data: { ...rest, width: rest.width ?? data.width, height: rest.height ?? data.height } })
   }
 }
 
