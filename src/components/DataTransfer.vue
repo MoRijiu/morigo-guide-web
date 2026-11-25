@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useCustomData } from '../composables/useCustomData'
 import { useUserData } from '../composables/useUserData'
@@ -21,6 +21,7 @@ import {
   type WebDavConfig,
 } from '../utils/webdav'
 import { copyText } from '../utils/clipboard'
+import { usePanelLayout } from '../composables/usePanelLayout'
 import { useI18n } from '../i18n'
 
 const { t } = useI18n()
@@ -29,29 +30,8 @@ const { customCategories, importCategories } = useCustomData()
 const { favorites, recent, importUserData } = useUserData()
 
 const open = ref(false)
-// 桌面端面板定位：内容变高后（同步码/WebDAV 区）向下展开可能超出视口底部，
-// 打开时实测按钮上下可用空间——下方不足时向上展开，并按可用空间动态限高。
-// 移动端（<640px）是 fixed 底部抽屉、走 CSS 既有口径，不参与此计算。
-const panelUp = ref(false)
-const panelMaxH = ref<number | undefined>(undefined)
-
-function layoutPanel() {
-  if (window.innerWidth < 640 || !rootEl.value) {
-    panelUp.value = false
-    panelMaxH.value = undefined
-    return
-  }
-  const rect = rootEl.value.getBoundingClientRect()
-  const below = window.innerHeight - rect.bottom - 12
-  const above = rect.top - 12
-  panelUp.value = below < 360 && above > below
-  const space = panelUp.value ? above : below
-  panelMaxH.value = Math.max(200, Math.min(Math.round(window.innerHeight * 0.85), space))
-}
-
-watch(open, (v) => {
-  if (v) void nextTick(layoutPanel)
-})
+const rootEl = ref<HTMLElement | null>(null)
+const { panelUp, panelMaxH } = usePanelLayout(rootEl, open)
 const mode = ref<'merge' | 'replace'>('merge')
 const message = ref('')
 const isError = ref(false)
@@ -194,8 +174,6 @@ function onOpenShareEvent() {
 // 关闭口径与其它弹层统一：按钮开关 + 点面板外关闭 + Esc 关闭。
 // 用 pointerdown 在按下时判定：触发按钮在本组件根元素内，不会误关；
 // 面板（移动端为 fixed 底部抽屉）同为根元素子节点，面板内操作不误伤。
-const rootEl = ref<HTMLElement | null>(null)
-
 function onDocPointerDown(e: PointerEvent) {
   if (open.value && rootEl.value && !rootEl.value.contains(e.target as Node)) {
     open.value = false
@@ -206,19 +184,13 @@ function onDocKeyDown(e: KeyboardEvent) {
   if (e.key === 'Escape') open.value = false
 }
 
-function onResize() {
-  if (open.value) layoutPanel()
-}
-
 onMounted(() => {
   window.addEventListener('morigo:open-share', onOpenShareEvent)
-  window.addEventListener('resize', onResize)
   document.addEventListener('pointerdown', onDocPointerDown)
   document.addEventListener('keydown', onDocKeyDown)
 })
 onBeforeUnmount(() => {
   window.removeEventListener('morigo:open-share', onOpenShareEvent)
-  window.removeEventListener('resize', onResize)
   document.removeEventListener('pointerdown', onDocPointerDown)
   document.removeEventListener('keydown', onDocKeyDown)
 })
