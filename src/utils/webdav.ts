@@ -10,7 +10,7 @@
  * - 浏览器直连 WebDAV 受目标服务 CORS 策略约束，服务端未放行时
  *   请求会失败，界面会给出提示。
  */
-import { parseSyncCode } from './syncCode'
+import { looksLikeSyncCode } from './syncCode'
 
 export interface WebDavConfig {
   url: string
@@ -92,7 +92,11 @@ export async function uploadSyncCodeToWebDav(config: WebDavConfig, code: string)
   if (!res.ok) throw new WebDavError('http', res.status)
 }
 
-/** 从 WebDAV 拉回同步码原文；404 / 内容不合法分别抛错，校验通过返回原文 */
+/**
+ * 从 WebDAV 拉回同步码原文；404 / 内容不合法分别抛错，外形校验通过返回原文。
+ * 只做外形校验（前缀+校验和）：加密同步码（R54）在此步还没有口令，
+ * 解密与内容校验由导入步完成。
+ */
 export async function downloadSyncCodeFromWebDav(config: WebDavConfig): Promise<string> {
   let res: Response
   try {
@@ -106,6 +110,6 @@ export async function downloadSyncCodeFromWebDav(config: WebDavConfig): Promise<
   if (res.status === 404) throw new WebDavError('notfound', 404)
   if (!res.ok) throw new WebDavError('http', res.status)
   const text = (await res.text()).trim()
-  if (!parseSyncCode(text)) throw new WebDavError('invalid')
+  if (!looksLikeSyncCode(text)) throw new WebDavError('invalid')
   return text
 }

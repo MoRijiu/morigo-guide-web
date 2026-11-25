@@ -36,9 +36,12 @@ const fileInput = ref<HTMLInputElement | null>(null)
 
 const shareUrl = ref('')
 const syncCode = ref('')
+/** 同步加密口令：只在本次面板会话内使用、不落盘；生成与导入/WebDAV 共用 */
+const syncPassphrase = ref('')
 
 async function onGenerateSync() {
-  const code = buildSyncCode()
+  const encrypted = syncPassphrase.value.length > 0
+  const code = await buildSyncCode(syncPassphrase.value)
   if (!code) {
     message.value = t('dt.msgSyncEmpty')
     isError.value = true
@@ -46,19 +49,30 @@ async function onGenerateSync() {
   }
   syncCode.value = code
   const ok = await copyText(code)
-  message.value = ok ? t('dt.msgSyncCopied') : t('dt.msgSyncReady')
+  message.value = encrypted
+    ? ok
+      ? t('dt.msgSyncEncryptedCopied')
+      : t('dt.msgSyncEncryptedReady')
+    : ok
+      ? t('dt.msgSyncCopied')
+      : t('dt.msgSyncReady')
   isError.value = false
 }
 
-function onImportSync() {
-  const payload = parseSyncCode(syncCode.value)
-  if (!payload) {
-    message.value = t('dt.errSyncInvalid')
+async function onImportSync() {
+  const result = await parseSyncCode(syncCode.value, syncPassphrase.value)
+  if (result.status !== 'ok') {
+    message.value =
+      result.status === 'needs-passphrase'
+        ? t('dt.errSyncNeedsPass')
+        : result.status === 'wrong-passphrase'
+          ? t('dt.errSyncWrongPass')
+          : t('dt.errSyncInvalid')
     isError.value = true
     return
   }
   if (!window.confirm(t('dt.syncConfirm'))) return
-  applySyncPayload(payload)
+  applySyncPayload(result.payload)
   // 偏好类 composable 都是启动时读取的单例，整表写入后刷新页面统一生效
   window.location.reload()
 }
@@ -88,7 +102,7 @@ async function onWebDavUpload() {
     isError.value = true
     return
   }
-  const code = buildSyncCode()
+  const code = await buildSyncCode(syncPassphrase.value)
   if (!code) {
     message.value = t('dt.msgSyncEmpty')
     isError.value = true
@@ -314,6 +328,20 @@ async function onFile(e: Event) {
           :aria-label="t('dt.syncTitle')"
           class="w-full mt-1 px-2 py-1.5 rounded-md border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 text-[11px] text-surface-500 dark:text-surface-400 break-all"
         />
+        <div class="relative mt-1.5">
+          <Icon
+            icon="mdi:lock-outline"
+            class="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-surface-400 pointer-events-none"
+          />
+          <input
+            v-model="syncPassphrase"
+            type="password"
+            autocomplete="off"
+            :placeholder="t('dt.syncPass')"
+            :aria-label="t('dt.syncPass')"
+            class="w-full pl-7 pr-2 py-1.5 rounded-md border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 text-[11px] text-surface-600 dark:text-surface-300"
+          />
+        </div>
         <button
           type="button"
           class="w-full flex items-center gap-1.5 px-2 py-1.5 mt-1 rounded-md text-xs font-medium text-surface-600 dark:text-surface-300 hover:bg-surface-50 dark:hover:bg-surface-800 transition-colors disabled:opacity-40"
@@ -323,6 +351,7 @@ async function onFile(e: Event) {
           <Icon icon="mdi:cloud-sync-outline" class="text-sm" />
           {{ t('dt.syncImport') }}
         </button>
+        <p class="px-2 mt-1 text-[11px] text-surface-300 dark:text-surface-600">{{ t('dt.syncPassHint') }}</p>
         <p class="px-2 mt-1 text-[11px] text-surface-300 dark:text-surface-600">{{ t('dt.syncHint') }}</p>
 
         <p class="px-2 mt-3 text-[11px] font-medium text-surface-500 dark:text-surface-400">{{ t('dt.webdavTitle') }}</p>
