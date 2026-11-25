@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, nextTick } from 'vue'
+import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import { Icon } from '@iconify/vue'
 import DynamicIcon from './DynamicIcon.vue'
 import siteConfig from '../config/site'
@@ -45,6 +45,51 @@ const {
 } = useSearchExtras()
 
 const engines = computed<SearchEngine[]>(() => [...siteConfig.search.engines, ...customEngines.value])
+
+// 引擎行横滑可发现性（R62 自审补齐，与 CategoryNav R38/R42 同口径）：
+// 隐藏原生滚动条后，溢出时用左右缘 mask 渐隐提示仍可横滑；PC 纵向滚轮转横滚，到边界不拦截。
+const engineRowRef = ref<HTMLElement | null>(null)
+const engineCanLeft = ref(false)
+const engineCanRight = ref(false)
+
+function updateEngineScrollState() {
+  const el = engineRowRef.value
+  if (!el) {
+    engineCanLeft.value = engineCanRight.value = false
+    return
+  }
+  engineCanLeft.value = el.scrollLeft > 4
+  engineCanRight.value = el.scrollWidth - el.clientWidth - el.scrollLeft > 4
+}
+
+const engineMaskImage = computed(() => {
+  const l = engineCanLeft.value
+  const r = engineCanRight.value
+  if (l && r) return 'linear-gradient(to right, transparent, black 2.5rem, black calc(100% - 2.5rem), transparent)'
+  if (l) return 'linear-gradient(to right, transparent, black 2.5rem)'
+  if (r) return 'linear-gradient(to right, black calc(100% - 2.5rem), transparent)'
+  return undefined
+})
+
+function onEngineWheel(e: WheelEvent) {
+  const el = engineRowRef.value
+  if (!el || e.shiftKey) return
+  if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return
+  const max = el.scrollWidth - el.clientWidth
+  if (max <= 0) return
+  const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? el.clientWidth : 1
+  const next = Math.max(0, Math.min(max, el.scrollLeft + e.deltaY * unit))
+  if (next === el.scrollLeft) return
+  e.preventDefault()
+  el.scrollLeft = next
+}
+
+onMounted(() => {
+  updateEngineScrollState()
+  window.addEventListener('resize', updateEngineScrollState)
+})
+onBeforeUnmount(() => window.removeEventListener('resize', updateEngineScrollState))
+watch([engines, locale], () => nextTick(updateEngineScrollState))
 
 const activeEngine = computed<string>({
   get: () =>
@@ -273,7 +318,7 @@ function onAddEngine() {
 
 <template>
   <div class="max-w-xl mx-auto">
-    <div class="flex items-center gap-1 mb-2.5 px-1 overflow-x-auto whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="tablist" :aria-label="t('search.enginesAria')">
+    <div ref="engineRowRef" class="flex items-center gap-1 mb-2.5 px-1 overflow-x-auto whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="tablist" :aria-label="t('search.enginesAria')" :style="engineMaskImage ? { maskImage: engineMaskImage, WebkitMaskImage: engineMaskImage } : undefined" @scroll="updateEngineScrollState" @wheel="onEngineWheel">
       <button
         v-for="engine in engines"
         :key="engine.key"
