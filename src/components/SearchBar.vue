@@ -4,11 +4,15 @@ import { Icon } from '@iconify/vue'
 import DynamicIcon from './DynamicIcon.vue'
 import siteConfig from '../config/site'
 import { useSearchExtras, buildSearchUrl } from '../composables/useSearchExtras'
+import { useUserData } from '../composables/useUserData'
+import { scoreSiteForQuery, completionTerms } from '../utils/suggest'
+import HighlightText from './HighlightText.vue'
 import type { NavItem, SearchEngine } from '../types'
 import { useI18n } from '../i18n'
 import { engineDisplayLabel } from '../utils/engineLabel'
 
-const { locale, t } = useI18n()
+const { locale, t, itemDesc } = useI18n()
+const { favoriteSet, visitCounts } = useUserData()
 
 /** 内置引擎名按语言展示（站内/百度/必应是 UI 文案，不是数据） */
 function engineLabel(engine: SearchEngine): string {
@@ -99,46 +103,64 @@ function onEnter() {
   }
 }
 
-// ==================== 建议下拉 ====================
+// ==================== 建议下拉（R41 增强：打分排序 + 补全词 + 跨组去重） ====================
 interface Suggestion {
   kind: 'history' | 'term' | 'site'
   text: string
   item?: NavItem
+  /** 该行是某分组的第一行时携带分组标题（已翻译） */
+  heading?: string
 }
 
 const suggestions = computed<Suggestion[]>(() => {
   const q = inputValue.value.trim().toLowerCase()
   const list: Suggestion[] = []
   const seen = new Set<string>()
-  const pushTerm = (kind: 'history' | 'term', text: string) => {
-    const key = text.toLowerCase()
+  const push = (s: Suggestion, heading?: string) => {
+    const key = s.text.toLowerCase()
     if (seen.has(key)) return
     seen.add(key)
-    list.push({ kind, text })
+    list.push(heading ? { ...s, heading } : s)
   }
+  const ctx = { favoriteUrls: favoriteSet.value, visitCounts: visitCounts.value }
   if (q) {
-    for (const h of history.value) {
-      if (list.filter((s) => s.kind === 'history').length >= 3) break
-      if (h.toLowerCase().includes(q)) pushTerm('history', h)
-    }
-    let siteCount = 0
-    for (const item of props.items) {
-      if (siteCount >= 5) break
-      const hit =
-        item.title.toLowerCase().includes(q) ||
-        (item.aliases ?? []).some((a) => a.toLowerCase().includes(q))
-      if (hit) {
-        list.push({ kind: 'site', text: item.title, item })
-        siteCount++
-      }
-    }
-    for (const t of props.hotTerms) {
-      if (list.filter((s) => s.kind === 'term').length >= 3) break
-      if (t.toLowerCase().includes(q)) pushTerm('term', t)
-    }
+    // 历史：前缀命中优先于子串命中，组内保持最近在前，最多 3 条
+    const hist = history.value.filter((h) => h.toLowerCase().includes(q))
+    const histSorted = [
+      ...hist.filter((h) => h.toLowerCase().startsWith(q)),
+      ...hist.filter((h) => !h.toLowerCase().startsWith(q)),
+    ]
+    histSorted.slice(0, 3).forEach((h, i) =>
+      push({ kind: 'history', text: h }, i === 0 ? t('search.history') : undefined)
+    )
+    // 站点直达：多字段打分（标题/别名/域名/三语描述 + 收藏/访问热度）排序，最多 6 条
+    const ranked = props.items
+      .map((item) => ({ item, score: scoreSiteForQuery(q, item, ctx) }))
+      .filter((x) => x.score >= 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 6)
+    ranked.forEach((x, i) =>
+      push({ kind: 'site', text: x.item.title, item: x.item }, i === 0 ? t('search.sites') : undefined)
+    )
+    // 补全词：以查询开头的标题/别名/热门词，与历史和站点标题跨组去重，最多 3 条
+    completionTerms(q, props.items, props.hotTerms, 3, seen).forEach((text, i) =>
+      push({ kind: 'term', text }, i === 0 ? t('search.hot') : undefined)
+    )
   } else {
-    for (const h of history.value.slice(0, 5)) pushTerm('history', h)
-    for (const t of props.hotTerms.slice(0, 5)) pushTerm('term', t)
+    history.value.slice(0, 4).forEach((h, i) =>
+      push({ kind: 'history', text: h }, i === 0 ? t('search.history') : undefined)
+    )
+    // 空查询常访站点：按访问次数取前 3
+    const frequent = props.items
+      .filter((item) => (visitCounts.value[item.url] ?? 0) > 0)
+      .sort((a, b) => (visitCounts.value[b.url] ?? 0) - (visitCounts.value[a.url] ?? 0))
+      .slice(0, 3)
+    frequent.forEach((item, i) =>
+      push({ kind: 'site', text: item.title, item }, i === 0 ? t('search.frequent') : undefined)
+    )
+    props.hotTerms.slice(0, 4).forEach((text, i) =>
+      push({ kind: 'term', text }, i === 0 ? t('search.hot') : undefined)
+    )
   }
   return list
 })
@@ -368,20 +390,17 @@ function onAddEngine() {
       >
         <template v-for="(s, i) in suggestions" :key="`${s.kind}:${s.text}`">
           <div
-            v-if="s.kind === 'history' && (i === 0 || suggestions[i - 1].kind !== 'history')"
+            v-if="s.heading"
             class="flex items-center justify-between px-3 pt-2 pb-0.5 text-[10px] text-surface-300 dark:text-surface-600"
           >
-            <span>{{ t('search.history') }}</span>
+            <span>{{ s.heading }}</span>
             <button
+              v-if="s.kind === 'history'"
               type="button"
               class="hover:text-accent-600 dark:hover:text-accent-400 transition-colors"
               @mousedown.prevent.stop="clearHistory"
             >{{ t('common.clear') }}</button>
           </div>
-          <p
-            v-else-if="s.kind === 'term' && (i === 0 || suggestions[i - 1].kind === 'history' || suggestions[i - 1].kind === 'site') && !suggestions.slice(0, i).some(x => x.kind === 'term')"
-            class="px-3 pt-2 pb-0.5 text-[10px] text-surface-300 dark:text-surface-600"
-          >{{ t('search.hot') }}</p>
           <div
             class="group flex items-center gap-2 px-3 py-1.5 cursor-pointer text-xs"
             :class="i === activeSuggest ? 'bg-accent-50 dark:bg-accent-500/10' : ''"
@@ -401,8 +420,8 @@ function onAddEngine() {
               class="text-sm text-accent-500 shrink-0"
             />
             <DynamicIcon v-else-if="s.item" :icon="s.item.icon" class="text-sm shrink-0" />
-            <span class="truncate text-surface-700 dark:text-surface-200">{{ s.text }}</span>
-            <span v-if="s.kind === 'site' && s.item" class="truncate text-[11px] text-surface-300 dark:text-surface-600">{{ s.item.description }}</span>
+            <span class="truncate text-surface-700 dark:text-surface-200"><HighlightText :text="s.text" :keyword="inputValue" /></span>
+            <span v-if="s.kind === 'site' && s.item" class="truncate text-[11px] text-surface-300 dark:text-surface-600">{{ itemDesc(s.item) }}</span>
             <button
               v-if="s.kind === 'history'"
               type="button"
