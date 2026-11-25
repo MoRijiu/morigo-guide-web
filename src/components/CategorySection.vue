@@ -4,6 +4,7 @@ import { Icon } from '@iconify/vue'
 import DynamicIcon from './DynamicIcon.vue'
 import CategoryIconPicker from './CategoryIconPicker.vue'
 import { categoryAnchorId } from '../utils/slug'
+import { createDragAutoScroller } from '../utils/dragAutoScroll'
 import { copyText } from '../utils/clipboard'
 import type { NavCategory } from '../types'
 import NavCard from './NavCard.vue'
@@ -154,7 +155,14 @@ function movedOrder(url: string, targetUrl: string, after: boolean): string[] | 
   return urls
 }
 
+let lastDragEvent: PointerEvent | null = null
+const dragAutoScroller = createDragAutoScroller(() => {
+  if (lastDragEvent) onPointerMove(lastDragEvent)
+})
+
 function onPointerMove(e: PointerEvent) {
+  lastDragEvent = e
+  dragAutoScroller.update(e.clientX, e.clientY)
   updateDropHighlight(e)
   const url = draggingUrl.value
   const container = listRef.value
@@ -185,6 +193,8 @@ function endDrag(e?: PointerEvent) {
     if (section) emit('move-item-to', { item, targetAnchorId: section.id })
   }
   clearDropHighlight()
+  dragAutoScroller.stop()
+  lastDragEvent = null
   draggingUrl.value = null
   draggingItem.value = null
   window.removeEventListener('pointermove', onPointerMove)
@@ -195,6 +205,7 @@ function endDrag(e?: PointerEvent) {
 function onSortStart(payload: { item: NavItem }) {
   draggingUrl.value = payload.item.url
   draggingItem.value = payload.item
+  dragAutoScroller.start()
   window.addEventListener('pointermove', onPointerMove)
   window.addEventListener('pointerup', endDrag)
   window.addEventListener('pointercancel', endDrag)

@@ -35,6 +35,7 @@ import { categoryAnchorId } from './utils/slug'
 import { engineDisplayLabel } from './utils/engineLabel'
 import { buildBackup, downloadBackup } from './utils/dataTransfer'
 import { copyText } from './utils/clipboard'
+import { createDragAutoScroller } from './utils/dragAutoScroll'
 import type { NavItem, NavCategory } from './types'
 
 const keyword = ref('')
@@ -156,7 +157,14 @@ function onCategorySortMove(name: string, delta: number) {
   setCategoryOrder(next)
 }
 
+let lastCategoryDragEvent: PointerEvent | null = null
+const categoryDragAutoScroller = createDragAutoScroller(() => {
+  if (lastCategoryDragEvent) onCategoryPointerMove(lastCategoryDragEvent)
+})
+
 function onCategoryPointerMove(e: PointerEvent) {
+  lastCategoryDragEvent = e
+  categoryDragAutoScroller.update(e.clientX, e.clientY)
   const name = draggingCategory.value
   if (!name) return
   const section = (document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null)?.closest(
@@ -178,6 +186,8 @@ function onCategoryPointerMove(e: PointerEvent) {
 }
 
 function endCategoryDrag() {
+  categoryDragAutoScroller.stop()
+  lastCategoryDragEvent = null
   draggingCategory.value = null
   window.removeEventListener('pointermove', onCategoryPointerMove)
   window.removeEventListener('pointerup', endCategoryDrag)
@@ -186,6 +196,7 @@ function endCategoryDrag() {
 
 function onCategorySortStart(name: string) {
   draggingCategory.value = name
+  categoryDragAutoScroller.start()
   window.addEventListener('pointermove', onCategoryPointerMove)
   window.addEventListener('pointerup', endCategoryDrag)
   window.addEventListener('pointercancel', endCategoryDrag)
