@@ -36,7 +36,56 @@ const emit = defineEmits<{
   remove: [payload: { categoryName: string; item: NavItem }]
   'sort-start': [payload: { item: NavItem; event: PointerEvent }]
   'sort-move': [payload: { item: NavItem; delta: number }]
+  'context-menu': [payload: { item: NavItem; categoryName?: string; x: number; y: number }]
 }>()
+
+// ==================== 右键 / 长按菜单 ====================
+function onContextMenu(e: MouseEvent) {
+  e.preventDefault()
+  emit('context-menu', { item: props.item, categoryName: props.categoryName, x: e.clientX, y: e.clientY })
+}
+
+let longPressTimer: ReturnType<typeof setTimeout> | undefined
+let longPressStart: { x: number; y: number } | null = null
+let suppressNextClick = false
+
+function clearLongPress() {
+  clearTimeout(longPressTimer)
+  longPressTimer = undefined
+  longPressStart = null
+}
+
+function onPointerDown(e: PointerEvent) {
+  // 仅主指针、且不落在卡片内按钮上时才计长按（按钮有自己的点击语义）
+  if (!e.isPrimary || e.button !== 0) return
+  if ((e.target as HTMLElement | null)?.closest('button')) return
+  clearLongPress()
+  longPressStart = { x: e.clientX, y: e.clientY }
+  const { x, y } = longPressStart
+  longPressTimer = setTimeout(() => {
+    suppressNextClick = true
+    try {
+      navigator.vibrate?.(10)
+    } catch {
+      // 不支持震动时忽略
+    }
+    emit('context-menu', { item: props.item, categoryName: props.categoryName, x, y })
+  }, 550)
+}
+
+function onPointerMove(e: PointerEvent) {
+  if (!longPressStart) return
+  if (Math.hypot(e.clientX - longPressStart.x, e.clientY - longPressStart.y) > 10) clearLongPress()
+}
+
+function onCardClick(e: MouseEvent) {
+  if (suppressNextClick) {
+    suppressNextClick = false
+    e.preventDefault()
+    return
+  }
+  recordVisit(props.item.url)
+}
 
 function onSortHandlePointerDown(e: PointerEvent) {
   // 拖拽由分类容器统一处理（指针移动实时重排）；此处只上报起点并阻止链接拖拽/页面滚动干扰
@@ -132,8 +181,14 @@ async function onCopyLink(e: Event) {
     ]"
     :style="{ animationDelay: enterDelay }"
     :data-sort-url="sortable ? item.url : undefined"
-    @click="recordVisit(item.url)"
+    @click="onCardClick"
     @keydown="onCardKeydown"
+    @contextmenu="onContextMenu"
+    @pointerdown="onPointerDown"
+    @pointermove="onPointerMove"
+    @pointerup="clearLongPress"
+    @pointercancel="clearLongPress"
+    @pointerleave="clearLongPress"
   >
     <span
       v-if="sortable"
