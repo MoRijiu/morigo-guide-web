@@ -96,7 +96,7 @@ onBeforeUnmount(() => {
 
     <div
       v-if="open"
-      class="absolute right-0 z-50 w-64 max-h-[85dvh] overflow-y-auto max-sm:fixed max-sm:left-3 max-sm:right-3 max-sm:bottom-3 max-sm:top-auto max-sm:w-auto max-sm:max-h-[78dvh] rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-900 shadow-lg p-3 text-left"
+      class="float-panel absolute right-0 z-50 w-64 max-h-[85dvh] overflow-y-auto max-sm:fixed max-sm:left-3 max-sm:right-3 max-sm:bottom-3 max-sm:top-auto max-sm:w-auto max-sm:max-h-[78dvh] rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-900 shadow-lg p-3 text-left"
       :class="panelUp ? 'bottom-full mb-1.5' : 'top-full mt-1.5'"
       :style="panelMaxH ? { maxHeight: panelMaxH + 'px' } : undefined"
       role="group"

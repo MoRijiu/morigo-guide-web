@@ -111,7 +111,7 @@ if (typeof window !== 'undefined') {
           </button>
           <div
             v-if="langOpen"
-            class="absolute right-0 top-full mt-1.5 w-32 rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-900 shadow-lg shadow-surface-900/5 py-1 z-50"
+            class="float-panel absolute right-0 top-full mt-1.5 w-32 rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-900 shadow-lg shadow-surface-900/5 py-1 z-50"
             role="listbox"
             :aria-label="t('header.langGroup')"
           >
