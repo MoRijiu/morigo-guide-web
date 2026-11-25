@@ -66,8 +66,25 @@ const mergedCategories = computed<NavCategory[]>(() => {
   return [...own, ...defaults]
 })
 
+/** 按用户分类顺序（useViewPrefs.categoryOrder）排过的合并分类；未列出的按原始顺序排在其后 */
+const orderedMergedCategories = computed<NavCategory[]>(() => {
+  const cats = mergedCategories.value
+  const order = categoryOrder.value
+  if (!order.length) return cats
+  return cats
+    .map((c, i) => ({ c, i }))
+    .sort((a, b) => {
+      const ia = order.indexOf(a.c.name)
+      const ib = order.indexOf(b.c.name)
+      const ka = ia < 0 ? 10000 + a.i : ia
+      const kb = ib < 0 ? 10000 + b.i : ib
+      return ka - kb
+    })
+    .map((x) => x.c)
+})
+
 const filteredCategories = computed(() => {
-  const data = mergedCategories.value
+  const data = orderedMergedCategories.value
   if (!trimmedKeyword.value) return data
 
   return data
@@ -101,6 +118,64 @@ function onReorder(categoryName: string, urls: string[]) {
   else setCustomOrder(categoryName, urls)
 }
 
+// ==================== 分类重排 ====================
+/**
+ * 分类本身可重排（个人分组「我的收藏/最近访问」置顶不动）：
+ * 顺序存 useViewPrefs 的 categoryOrder，分类导航条与命令面板跟随同一展示顺序。
+ */
+const draggingCategory = ref<string | null>(null)
+
+function isCategorySortable(category: NavCategory): boolean {
+  if (trimmedKeyword.value) return false
+  return mergedCategories.value.some((c) => c.name === category.name)
+}
+
+function onCategorySortMove(name: string, delta: number) {
+  const names = orderedMergedCategories.value.map((c) => c.name)
+  const idx = names.indexOf(name)
+  const target = idx + delta
+  if (idx < 0 || target < 0 || target >= names.length) return
+  const next = [...names]
+  const [n] = next.splice(idx, 1)
+  next.splice(target, 0, n)
+  setCategoryOrder(next)
+}
+
+function onCategoryPointerMove(e: PointerEvent) {
+  const name = draggingCategory.value
+  if (!name) return
+  const section = (document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null)?.closest(
+    'section[id]'
+  ) as HTMLElement | null
+  if (!section) return
+  const target = orderedMergedCategories.value.find((c) => categoryAnchorId(c.name) === section.id)
+  if (!target || target.name === name) return
+  const rect = section.getBoundingClientRect()
+  const after = e.clientY > rect.top + rect.height / 2
+  const names = orderedMergedCategories.value.map((c) => c.name)
+  const from = names.indexOf(name)
+  if (from < 0) return
+  names.splice(from, 1)
+  const insertAt = names.indexOf(target.name) + (after ? 1 : 0)
+  if (insertAt === from) return
+  names.splice(insertAt, 0, name)
+  setCategoryOrder(names)
+}
+
+function endCategoryDrag() {
+  draggingCategory.value = null
+  window.removeEventListener('pointermove', onCategoryPointerMove)
+  window.removeEventListener('pointerup', endCategoryDrag)
+  window.removeEventListener('pointercancel', endCategoryDrag)
+}
+
+function onCategorySortStart(name: string) {
+  draggingCategory.value = name
+  window.addEventListener('pointermove', onCategoryPointerMove)
+  window.addEventListener('pointerup', endCategoryDrag)
+  window.addEventListener('pointercancel', endCategoryDrag)
+}
+
 // ==================== 分享链接导入 ====================
 const sharePayload = ref<SharePayload | null>(null)
 
@@ -117,7 +192,7 @@ function onShareImport() {
 }
 
 // ==================== 视图与布局 ====================
-const { view, density, setView, setDensity, isCollapsed, toggleCollapsed, setAllCollapsed } =
+const { view, density, setView, setDensity, isCollapsed, toggleCollapsed, setAllCollapsed, categoryOrder, setCategoryOrder } =
   useViewPrefs()
 
 const allCollapsed = computed(
@@ -442,6 +517,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', onGlobalKeydown, true)
   window.removeEventListener('hashchange', onHashChange)
+  endCategoryDrag()
 })
 </script>
 
@@ -570,6 +646,10 @@ onBeforeUnmount(() => {
           :collapsed="!trimmedKeyword && isCollapsed(category.name)"
           :sortable="isSortableCategory(category)"
           :custom-icon-editable="!trimmedKeyword && isCustomOnlyCategory(category)"
+          :category-sortable="isCategorySortable(category)"
+          :category-dragging="draggingCategory === category.name"
+          @category-sort-start="onCategorySortStart(category.name)"
+          @category-sort-move="onCategorySortMove(category.name, $event)"
           @reorder="onReorder(category.name, $event)"
           @update-icon="setCategoryIcon(category.name, $event)"
           @toggle-collapse="toggleCollapsed(category.name)"
