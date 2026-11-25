@@ -300,7 +300,7 @@ function onAddEngine() {
       </button>
     </div>
 
-    <div v-if="managerOpen" class="mb-2.5 mx-1 rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-900 p-3 text-left" @keydown.esc="managerOpen = false">
+    <div v-if="managerOpen" class="float-panel mb-2.5 mx-1 rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-900 p-3 text-left" @keydown.esc="managerOpen = false">
       <p class="text-xs font-medium text-surface-600 dark:text-surface-300 mb-2">{{ t('engine.customTitle') }}</p>
       <ul v-if="customEngines.length" class="mb-2.5 space-y-1">
         <li
@@ -396,7 +396,7 @@ function onAddEngine() {
       <div
         v-if="dropdownVisible"
         ref="dropdownRef"
-        class="absolute left-0 right-0 top-full mt-1.5 z-50 rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-900 shadow-lg shadow-surface-900/5 overflow-y-auto max-h-[55dvh] text-left"
+        class="float-panel absolute left-0 right-0 top-full mt-1.5 z-50 rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-900 shadow-lg shadow-surface-900/5 overflow-y-auto max-h-[55dvh] text-left"
         role="listbox"
         :aria-label="t('search.suggestionsAria')"
       >

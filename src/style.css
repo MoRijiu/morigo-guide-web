@@ -225,3 +225,16 @@ html[data-glass='true'] .widget-card {
 html.dark[data-glass='true'] .widget-card {
   background-color: rgb(39 39 42 / 0.55);
 }
+
+/* 浮层毛玻璃：全站浮层本体（下拉面板 / 右键菜单 / 命令面板 / 模态弹窗）共用
+   .float-panel，与卡片同口径——毛玻璃关闭时保持组件自身实色背景（不加规则），
+   开启时统一半透明 + 背景模糊，透明度与模糊量对齐顶栏（white /80、
+   surface-900 /82、blur 16px），保证面板内文字对比不降 */
+html[data-glass='true'] .float-panel {
+  background-color: rgb(255 255 255 / 0.8);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+html.dark[data-glass='true'] .float-panel {
+  background-color: rgb(24 24 27 / 0.82);
+}

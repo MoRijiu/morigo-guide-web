@@ -129,7 +129,7 @@ function kindLabel(entry: PaletteEntry): string {
     :aria-label="t('palette.aria')"
     @click.self="emit('close')"
   >
-    <div class="w-full max-w-lg rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-900 shadow-2xl overflow-hidden">
+    <div class="float-panel w-full max-w-lg rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-900 shadow-2xl overflow-hidden">
       <div class="flex items-center gap-2 px-3.5 border-b border-surface-100 dark:border-surface-800">
         <Icon icon="mdi:magnify" class="text-lg text-surface-400 shrink-0" />
         <input

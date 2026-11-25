@@ -281,7 +281,7 @@ function copyAnchor(id: string) {
         </button>
         <span
           v-if="iconPickerOpen"
-          class="absolute left-0 top-full mt-1.5 z-50 block w-60 max-w-[78vw] p-2 rounded-xl bg-white dark:bg-surface-900 border border-surface-100 dark:border-surface-800 shadow-xl"
+          class="float-panel absolute left-0 top-full mt-1.5 z-50 block w-60 max-w-[78vw] p-2 rounded-xl bg-white dark:bg-surface-900 border border-surface-100 dark:border-surface-800 shadow-xl"
         >
           <CategoryIconPicker :model-value="category.icon" @update:model-value="onPickIcon" />
         </span>
