@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useCustomData } from '../composables/useCustomData'
 import { useUserData } from '../composables/useUserData'
@@ -29,6 +29,29 @@ const { customCategories, importCategories } = useCustomData()
 const { favorites, recent, importUserData } = useUserData()
 
 const open = ref(false)
+// 桌面端面板定位：内容变高后（同步码/WebDAV 区）向下展开可能超出视口底部，
+// 打开时实测按钮上下可用空间——下方不足时向上展开，并按可用空间动态限高。
+// 移动端（<640px）是 fixed 底部抽屉、走 CSS 既有口径，不参与此计算。
+const panelUp = ref(false)
+const panelMaxH = ref<number | undefined>(undefined)
+
+function layoutPanel() {
+  if (window.innerWidth < 640 || !rootEl.value) {
+    panelUp.value = false
+    panelMaxH.value = undefined
+    return
+  }
+  const rect = rootEl.value.getBoundingClientRect()
+  const below = window.innerHeight - rect.bottom - 12
+  const above = rect.top - 12
+  panelUp.value = below < 360 && above > below
+  const space = panelUp.value ? above : below
+  panelMaxH.value = Math.max(200, Math.min(Math.round(window.innerHeight * 0.85), space))
+}
+
+watch(open, (v) => {
+  if (v) void nextTick(layoutPanel)
+})
 const mode = ref<'merge' | 'replace'>('merge')
 const message = ref('')
 const isError = ref(false)
@@ -183,13 +206,19 @@ function onDocKeyDown(e: KeyboardEvent) {
   if (e.key === 'Escape') open.value = false
 }
 
+function onResize() {
+  if (open.value) layoutPanel()
+}
+
 onMounted(() => {
   window.addEventListener('morigo:open-share', onOpenShareEvent)
+  window.addEventListener('resize', onResize)
   document.addEventListener('pointerdown', onDocPointerDown)
   document.addEventListener('keydown', onDocKeyDown)
 })
 onBeforeUnmount(() => {
   window.removeEventListener('morigo:open-share', onOpenShareEvent)
+  window.removeEventListener('resize', onResize)
   document.removeEventListener('pointerdown', onDocPointerDown)
   document.removeEventListener('keydown', onDocKeyDown)
 })
@@ -244,7 +273,9 @@ async function onFile(e: Event) {
 
     <div
       v-if="open"
-      class="absolute right-0 top-full mt-1.5 z-50 w-72 max-w-[calc(100vw-2.5rem)] max-h-[85dvh] overflow-y-auto max-sm:fixed max-sm:left-3 max-sm:right-3 max-sm:bottom-3 max-sm:top-auto max-sm:w-auto max-sm:max-w-none max-sm:max-h-[78dvh] rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-900 shadow-lg p-3 text-left"
+      class="absolute right-0 z-50 w-72 max-w-[calc(100vw-2.5rem)] max-h-[85dvh] overflow-y-auto max-sm:fixed max-sm:left-3 max-sm:right-3 max-sm:bottom-3 max-sm:top-auto max-sm:w-auto max-sm:max-w-none max-sm:max-h-[78dvh] rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-900 shadow-lg p-3 text-left"
+      :class="panelUp ? 'bottom-full mb-1.5' : 'top-full mt-1.5'"
+      :style="panelMaxH ? { maxHeight: panelMaxH + 'px' } : undefined"
     >
       <button
         type="button"
