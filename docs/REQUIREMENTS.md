@@ -63,6 +63,7 @@ MoriGo 是一个开源、可自部署的网址导航站：打开就能用，核�
 | R36 | 数据扩充第三批 | 默认导航 68 → 85 站点：AI 工具补 GitHub Copilot/Zucchini/文心一言，前端开发补 Angular/Svelte，设计资源补 Framer，后端 & DevOps 补 GitLab/MongoDB/Grafana，云服务补 DigitalOcean/华为云，效率工具补 Trello/语雀，学习资源补 arXiv/Khan Academy，影音娱乐补 SoundCloud/爱奇艺；全部条目带中英日三语描述与别名，无品牌图标条目用 MDI 通用图标兜底；图标本地注册 172 → 187 |
 | R37 | 语言控件按钮化 | 顶栏语言触发器由带边框的文字胶囊（形似表单 select）改为与相邻 GitHub/主题按钮完全同款的 32px 图标按钮（无边框、hover 底色一致）；按钮内以短码（中 / EN / あ）直接呈现当前语言，切换后立即跟随；下拉菜单不变（三语列表、当前项打勾高亮、点外/Esc 关闭） |
 | R38 | 分类条滚动条隐藏 | 按用户截图反馈修：分类导航 chip 行原为裸横向滚动，Windows 下原生滚动条在导航条下方渲染成一条粗灰横条（分类多、分类名长时必然出现）；改为与搜索框搜索引擎行同一口径隐藏滚动条（横滑/触控/滚轮不受影响），并在右侧仍有内容时给 chip 行加 mask 渐隐提示可继续滑动，滑到尽头自动消失 |
+| R39 | 数据扩充第四批（生活类新分类） | 默认导航 9 分类 85 站点 → 12 分类 109 站点：新增「游戏」（Epic Games/GOG/itch.io/Xbox/PlayStation/Nintendo/Riot Games/米哈游）、「购物」（Amazon/淘宝/京东/eBay/AliExpress/Etsy/Shopee/拼多多）、「旅行出行」（Google Maps/Booking.com/Airbnb/Trip.com/Expedia/Tripadvisor/Uber/高德地图）三个生活类分类；全部条目带中英日三语描述与别名，无品牌图标条目用 MDI 通用图标兜底；图标本地注册 187 → 211 |
 
 ### 2.3 非目标
 
