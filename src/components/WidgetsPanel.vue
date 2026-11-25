@@ -3,6 +3,7 @@ import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useWidgets, type WidgetId } from '../composables/useWidgets'
 import { WEATHER_CITIES } from '../utils/weather'
+import { usePanelLayout } from '../composables/usePanelLayout'
 import { useI18n } from '../i18n'
 
 const { t, locale } = useI18n()
@@ -10,6 +11,7 @@ const { enabled, setEnabled, weatherCity, setWeatherCity } = useWidgets()
 
 const open = ref(false)
 const rootEl = ref<HTMLElement | null>(null)
+const { panelUp, panelMaxH } = usePanelLayout(rootEl, open)
 
 const WIDGETS: { id: WidgetId; icon: string; labelKey: string }[] = [
   { id: 'clock', icon: 'mdi:clock-outline', labelKey: 'widget.clock' },
@@ -94,7 +96,9 @@ onBeforeUnmount(() => {
 
     <div
       v-if="open"
-      class="absolute right-0 top-full mt-1.5 z-50 w-64 max-h-[85dvh] overflow-y-auto max-sm:fixed max-sm:left-3 max-sm:right-3 max-sm:bottom-3 max-sm:top-auto max-sm:w-auto max-sm:max-h-[78dvh] rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-900 shadow-lg p-3 text-left"
+      class="absolute right-0 z-50 w-64 max-h-[85dvh] overflow-y-auto max-sm:fixed max-sm:left-3 max-sm:right-3 max-sm:bottom-3 max-sm:top-auto max-sm:w-auto max-sm:max-h-[78dvh] rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-900 shadow-lg p-3 text-left"
+      :class="panelUp ? 'bottom-full mb-1.5' : 'top-full mt-1.5'"
+      :style="panelMaxH ? { maxHeight: panelMaxH + 'px' } : undefined"
       role="group"
       :aria-label="t('widget.aria')"
     >
