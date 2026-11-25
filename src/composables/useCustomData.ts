@@ -23,6 +23,7 @@ function load(): NavCategory[] {
       .map((c) => ({
         name: c.name,
         ...(typeof c.nameEn === 'string' && c.nameEn ? { nameEn: c.nameEn } : {}),
+        ...(typeof c.nameJa === 'string' && c.nameJa ? { nameJa: c.nameJa } : {}),
         icon: typeof c.icon === 'string' && c.icon ? c.icon : 'mdi:folder-outline',
         items: c.items.filter(
           (i): i is NavItem =>

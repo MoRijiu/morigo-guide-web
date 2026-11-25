@@ -1,13 +1,13 @@
 /**
  * 本地一言库：纯本地语录，不请求任何外部 API（离线可用、国内可达）。
- * 中/英各一组，按日期取「每日一句」，用户也可手动换一句（随机）。
+ * 中/英/日各一组，按日期取「每日一句」，用户也可手动换一句（随机）。
  */
 export interface Quote {
   text: string
   author: string
 }
 
-export const QUOTES: Record<'zh' | 'en', Quote[]> = {
+export const QUOTES: Record<'zh' | 'en' | 'ja', Quote[]> = {
   zh: [
     { text: '路漫漫其修远兮，吾将上下而求索。', author: '屈原《离骚》' },
     { text: '山重水复疑无路，柳暗花明又一村。', author: '陆游' },
@@ -39,6 +39,22 @@ export const QUOTES: Record<'zh' | 'en', Quote[]> = {
     { text: 'Make it work, make it right, make it fast.', author: 'Kent Beck' },
     { text: 'The only way to do great work is to love what you do.', author: 'Steve Jobs' },
     { text: 'Curiosity is the engine of achievement.', author: 'Ken Robinson' },
+  ],
+  ja: [
+    { text: '為せば成る、為さねば成らぬ何事も。', author: '上杉鷹山' },
+    { text: '七転び八起き。', author: 'ことわざ' },
+    { text: '継続は力なり。', author: '格言' },
+    { text: '千里の道も一歩から。', author: '老子' },
+    { text: '人間万事塞翁が馬。', author: 'ことわざ' },
+    { text: '明日は明日の風が吹く。', author: 'ことわざ' },
+    { text: '石の上にも三年。', author: 'ことわざ' },
+    { text: '急がば回れ。', author: 'ことわざ' },
+    { text: '思い立ったが吉日。', author: 'ことわざ' },
+    { text: '笑う門には福来たる。', author: 'ことわざ' },
+    { text: '一期一会。', author: '千利休' },
+    { text: '温故知新。', author: '孔子' },
+    { text: '初心忘るべからず。', author: '世阿弥' },
+    { text: '夢なき者に成功なし。', author: '吉田松陰' },
   ],
 }
 

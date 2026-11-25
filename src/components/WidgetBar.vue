@@ -36,12 +36,14 @@ const weatherIcon = computed(() => {
 })
 const conditionText = computed(() => {
   if (!condition.value) return ''
+  if (locale.value === 'ja') return condition.value.ja
   return locale.value === 'zh' ? condition.value.zh : condition.value.en
 })
 const cityName = computed(() => {
   if (weatherCity.value.id === 'geo') return t('widget.weather.myLocation')
   const c = WEATHER_CITIES.find((x) => x.id === weatherCity.value.id)
   if (!c) return t('widget.weather.myLocation')
+  if (locale.value === 'ja') return c.ja
   return locale.value === 'zh' ? c.zh : c.en
 })
 
@@ -68,7 +70,9 @@ onBeforeUnmount(() => {
   if (timer) clearInterval(timer)
 })
 
-const intlLocale = computed(() => (locale.value === 'zh' ? 'zh-CN' : 'en-US'))
+const intlLocale = computed(() =>
+  locale.value === 'zh' ? 'zh-CN' : locale.value === 'ja' ? 'ja-JP' : 'en-US'
+)
 const timeText = computed(() =>
   new Intl.DateTimeFormat(intlLocale.value, {
     hour: '2-digit',

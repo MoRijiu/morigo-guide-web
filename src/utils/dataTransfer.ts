@@ -59,6 +59,9 @@ export function sanitizeCategories(input: unknown): NavCategory[] {
         ...(typeof i.descriptionEn === 'string' && i.descriptionEn
           ? { descriptionEn: i.descriptionEn.slice(0, 200) }
           : {}),
+        ...(typeof i.descriptionJa === 'string' && i.descriptionJa
+          ? { descriptionJa: i.descriptionJa.slice(0, 200) }
+          : {}),
         url,
         icon: typeof i.icon === 'string' && i.icon ? i.icon : 'mdi:web',
         ...(Array.isArray(i.aliases)
@@ -71,6 +74,9 @@ export function sanitizeCategories(input: unknown): NavCategory[] {
         name: cat.name.trim().slice(0, 40),
         ...(typeof cat.nameEn === 'string' && cat.nameEn
           ? { nameEn: cat.nameEn.trim().slice(0, 40) }
+          : {}),
+        ...(typeof cat.nameJa === 'string' && cat.nameJa
+          ? { nameJa: cat.nameJa.trim().slice(0, 40) }
           : {}),
         icon: typeof cat.icon === 'string' && cat.icon ? cat.icon : 'mdi:folder-outline',
         items,

@@ -9,14 +9,41 @@ const { locale, setLocale, t } = useI18n()
 
 const isDark = ref(false)
 
+// 语言下拉（三语后改下拉：按钮显示当前语言，菜单里当前项打勾高亮）
+const langOpen = ref(false)
+const langRoot = ref<HTMLElement | null>(null)
+const LANG_OPTIONS = [
+  { value: 'zh', label: '中文', titleKey: 'header.toZh' },
+  { value: 'en', label: 'English', titleKey: 'header.toEn' },
+  { value: 'ja', label: '日本語', titleKey: 'header.toJa' },
+] as const
+const currentLangLabel = () =>
+  LANG_OPTIONS.find((o) => o.value === locale.value)?.label ?? '中文'
+
+function pickLocale(next: 'zh' | 'en' | 'ja') {
+  setLocale(next)
+  langOpen.value = false
+}
+
+function onLangDocPointerDown(e: PointerEvent) {
+  if (langRoot.value && !langRoot.value.contains(e.target as Node)) langOpen.value = false
+}
+function onLangDocKeyDown(e: KeyboardEvent) {
+  if (e.key === 'Escape') langOpen.value = false
+}
+
 onMounted(() => {
   isDark.value = document.documentElement.classList.contains('dark')
   // 命令面板等外部入口通过事件请求切换主题，状态仍由顶栏统一持有
   window.addEventListener('morigo:toggle-theme', toggleDark)
+  document.addEventListener('pointerdown', onLangDocPointerDown)
+  document.addEventListener('keydown', onLangDocKeyDown)
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('morigo:toggle-theme', toggleDark)
+  document.removeEventListener('pointerdown', onLangDocPointerDown)
+  document.removeEventListener('keydown', onLangDocKeyDown)
 })
 
 function toggleDark() {
@@ -64,38 +91,47 @@ if (typeof window !== 'undefined') {
           :title="isDark ? t('header.light') : t('header.dark')"
           :aria-label="isDark ? t('header.toLight') : t('header.toDark')"
         >
-          <Icon :icon="isDark ? 'mdi:white-balance-sunny' : 'mdi:moon-waning-crescent'" class="text-lg" />
+          <Icon :icon="isDark ? 'mdi:white-balance-sunny' : 'mdi:moon-waning-crescent'" :class="['text-lg', !isDark && '-rotate-[24deg]']" />
         </button>
-        <!-- 语言切换：双段式，当前语言高亮——按钮直接呈现当前状态，不再只显示目标语言 -->
-        <div
-          class="flex items-center rounded-md border border-surface-200 dark:border-surface-700 overflow-hidden"
-          role="group"
-          :aria-label="t('header.langGroup')"
-        >
+        <!-- 语言切换：下拉式（三语），按钮显示当前语言、菜单当前项打勾——直接呈现当前状态 -->
+        <div ref="langRoot" class="relative">
           <button
             type="button"
-            class="h-8 px-2 text-[11px] font-medium transition-colors"
-            :class="locale === 'zh'
-              ? 'bg-accent-600 text-white'
-              : 'text-surface-400 hover:text-surface-600 dark:hover:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800'"
-            :aria-pressed="locale === 'zh'"
-            :aria-current="locale === 'zh' ? 'true' : undefined"
-            :title="t('header.toZh')"
-            :aria-label="t('header.toZh')"
-            @click="setLocale('zh')"
-          >中文</button>
-          <button
-            type="button"
-            class="h-8 px-2 text-[11px] font-medium transition-colors"
-            :class="locale === 'en'
-              ? 'bg-accent-600 text-white'
-              : 'text-surface-400 hover:text-surface-600 dark:hover:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800'"
-            :aria-pressed="locale === 'en'"
-            :aria-current="locale === 'en' ? 'true' : undefined"
-            :title="t('header.toEn')"
-            :aria-label="t('header.toEn')"
-            @click="setLocale('en')"
-          >EN</button>
+            class="h-8 pl-2 pr-1.5 rounded-md flex items-center gap-1 border border-surface-200 dark:border-surface-700 text-[11px] font-medium text-surface-500 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors"
+            :aria-label="t('header.langGroup')"
+            :title="t('header.langGroup')"
+            aria-haspopup="listbox"
+            :aria-expanded="langOpen"
+            @click="langOpen = !langOpen"
+          >
+            <Icon icon="mdi:translate" class="text-sm" />
+            <span>{{ currentLangLabel() }}</span>
+            <Icon icon="mdi:chevron-down" class="text-sm text-surface-400" />
+          </button>
+          <div
+            v-if="langOpen"
+            class="absolute right-0 top-full mt-1.5 w-32 rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-900 shadow-lg shadow-surface-900/5 py-1 z-50"
+            role="listbox"
+            :aria-label="t('header.langGroup')"
+          >
+            <button
+              v-for="opt in LANG_OPTIONS"
+              :key="opt.value"
+              type="button"
+              role="option"
+              class="w-full px-2.5 py-1.5 flex items-center justify-between text-xs transition-colors"
+              :class="locale === opt.value
+                ? 'text-accent-600 dark:text-accent-400 font-semibold'
+                : 'text-surface-600 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800'"
+              :aria-selected="locale === opt.value"
+              :aria-current="locale === opt.value ? 'true' : undefined"
+              :title="t(opt.titleKey)"
+              @click="pickLocale(opt.value)"
+            >
+              <span>{{ opt.label }}</span>
+              <Icon v-if="locale === opt.value" icon="mdi:check" class="text-sm" />
+            </button>
+          </div>
         </div>
       </div>
     </div>

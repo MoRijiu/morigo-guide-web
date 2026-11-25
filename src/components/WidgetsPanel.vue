@@ -19,7 +19,10 @@ const WIDGETS: { id: WidgetId; icon: string; labelKey: string }[] = [
 ]
 
 const cityOptions = computed(() =>
-  WEATHER_CITIES.map((c) => ({ id: c.id, name: locale.value === 'zh' ? c.zh : c.en }))
+  WEATHER_CITIES.map((c) => ({
+    id: c.id,
+    name: locale.value === 'ja' ? c.ja : locale.value === 'zh' ? c.zh : c.en,
+  }))
 )
 
 function onCityChange(e: Event) {
