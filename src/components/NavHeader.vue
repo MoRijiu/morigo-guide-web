@@ -19,6 +19,9 @@ const LANG_OPTIONS = [
 ] as const
 const currentLangLabel = () =>
   LANG_OPTIONS.find((o) => o.value === locale.value)?.label ?? '中文'
+// 触发器短码：与相邻图标按钮同尺寸同款，按钮内文字直接呈现当前语言
+const LANG_CODES: Record<string, string> = { zh: '中', en: 'EN', ja: 'あ' }
+const currentLangCode = () => LANG_CODES[locale.value] ?? '中'
 
 function pickLocale(next: 'zh' | 'en' | 'ja') {
   setLocale(next)
@@ -93,20 +96,18 @@ if (typeof window !== 'undefined') {
         >
           <Icon :icon="isDark ? 'mdi:white-balance-sunny' : 'mdi:moon-waning-crescent'" :class="['text-lg', !isDark && '-rotate-[24deg]']" />
         </button>
-        <!-- 语言切换：下拉式（三语），按钮显示当前语言、菜单当前项打勾——直接呈现当前状态 -->
+        <!-- 语言切换：与相邻按钮同款的图标按钮形态，按钮内短码（中/EN/あ）呈现当前语言，点开下拉三语选 -->
         <div ref="langRoot" class="relative">
           <button
             type="button"
-            class="h-8 pl-2 pr-1.5 rounded-md flex items-center gap-1 border border-surface-200 dark:border-surface-700 text-[11px] font-medium text-surface-500 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors"
+            class="w-8 h-8 rounded-md flex items-center justify-center text-surface-400 hover:text-surface-600 dark:hover:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors"
             :aria-label="t('header.langGroup')"
-            :title="t('header.langGroup')"
+            :title="`${t('header.langGroup')} · ${currentLangLabel()}`"
             aria-haspopup="listbox"
             :aria-expanded="langOpen"
             @click="langOpen = !langOpen"
           >
-            <Icon icon="mdi:translate" class="text-sm" />
-            <span>{{ currentLangLabel() }}</span>
-            <Icon icon="mdi:chevron-down" class="text-sm text-surface-400" />
+            <span class="text-[11px] font-semibold tracking-wide">{{ currentLangCode() }}</span>
           </button>
           <div
             v-if="langOpen"
