@@ -33,6 +33,7 @@ const { t, locale, catName, itemDesc } = useI18n()
 import { categoryAnchorId } from './utils/slug'
 import { engineDisplayLabel } from './utils/engineLabel'
 import { buildBackup, downloadBackup } from './utils/dataTransfer'
+import { copyText } from './utils/clipboard'
 import type { NavItem, NavCategory } from './types'
 
 const keyword = ref('')
@@ -372,11 +373,8 @@ function onContextOpen(item: NavItem) {
 
 async function onContextCopy(item: NavItem) {
   closeContextMenu()
-  try {
-    await navigator.clipboard.writeText(item.url)
-  } catch {
-    // 剪贴板不可用时静默忽略
-  }
+  // 统一走带 execCommand 兜底的复制工具
+  await copyText(item.url)
 }
 
 function onContextToggleFavorite(item: NavItem) {

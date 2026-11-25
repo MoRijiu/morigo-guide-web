@@ -4,6 +4,7 @@ import { Icon } from '@iconify/vue'
 import DynamicIcon from './DynamicIcon.vue'
 import CategoryIconPicker from './CategoryIconPicker.vue'
 import { categoryAnchorId } from '../utils/slug'
+import { copyText } from '../utils/clipboard'
 import type { NavCategory } from '../types'
 import NavCard from './NavCard.vue'
 import { useI18n } from '../i18n'
@@ -178,7 +179,8 @@ const categoryId = computed(() => categoryAnchorId(props.category.name))
 
 function copyAnchor(id: string) {
   const url = `${location.origin}${location.pathname}#${id}`
-  navigator.clipboard.writeText(url)
+  // 统一走带 execCommand 兜底的复制工具（失败静默：锚点复制是次要动作）
+  void copyText(url)
 }
 </script>
 
