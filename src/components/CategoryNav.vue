@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
+import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import DynamicIcon from './DynamicIcon.vue'
 import { categoryAnchorId } from '../utils/slug'
 import type { NavCategory } from '../types'
 import { useI18n } from '../i18n'
+import { useHScroll } from '../composables/useHScroll'
 
 const { t, catName, locale } = useI18n()
 
@@ -14,48 +15,11 @@ const props = defineProps<{
 const activeId = ref('')
 let observer: IntersectionObserver | null = null
 
-// 横向滚动条隐藏（与 SearchBar 引擎行同一口径）；隐藏后补齐 PC 横滚手段：
-// 滚轮转横滚、按住拖动、两侧箭头按钮；左右缘 mask 渐隐与可滚状态联动
-const scrollRef = ref<HTMLElement | null>(null)
-const canScrollLeft = ref(false)
-const canScrollRight = ref(false)
-const hasOverflow = ref(false)
+// 横向滚动条隐藏后的可发现性口径走共用 composable useHScroll（与 SearchBar 引擎行同一实现，R66）；
+// 本组件额外的横滚手段：按住拖动、两侧箭头按钮（见下）
+const { scrollRef, canScrollLeft, canScrollRight, hasOverflow, maskImage, updateScrollState, refreshScrollState } = useHScroll()
 const canHover = ref(false)
 const isDragging = ref(false)
-
-function updateScrollState() {
-  const el = scrollRef.value
-  if (!el) {
-    canScrollLeft.value = canScrollRight.value = hasOverflow.value = false
-    return
-  }
-  canScrollLeft.value = el.scrollLeft > 4
-  canScrollRight.value = el.scrollWidth - el.clientWidth - el.scrollLeft > 4
-  hasOverflow.value = el.scrollWidth - el.clientWidth > 4
-}
-
-const maskImage = computed(() => {
-  const l = canScrollLeft.value
-  const r = canScrollRight.value
-  if (l && r) return 'linear-gradient(to right, transparent, black 2.5rem, black calc(100% - 2.5rem), transparent)'
-  if (l) return 'linear-gradient(to right, transparent, black 2.5rem)'
-  if (r) return 'linear-gradient(to right, black calc(100% - 2.5rem), transparent)'
-  return undefined
-})
-
-// 滚轮转横滚：悬停时纵向滚轮驱动横向滚动；已到边界则不拦截，页面继续纵滚
-function onWheel(e: WheelEvent) {
-  const el = scrollRef.value
-  if (!el || e.shiftKey) return
-  if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return
-  const max = el.scrollWidth - el.clientWidth
-  if (max <= 0) return
-  const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? el.clientWidth : 1
-  const next = Math.max(0, Math.min(max, el.scrollLeft + e.deltaY * unit))
-  if (next === el.scrollLeft) return
-  e.preventDefault()
-  el.scrollLeft = next
-}
 
 // 按住拖动横滚：拖动超 5px 后抑制本次 click，避免拖完误跳分类
 let dragStartX = 0
@@ -128,21 +92,16 @@ function observeSections() {
 
 onMounted(() => {
   observeSections()
-  updateScrollState()
   canHover.value = window.matchMedia('(hover: hover) and (pointer: fine)').matches
-  window.addEventListener('resize', updateScrollState)
-  scrollRef.value?.addEventListener('wheel', onWheel, { passive: false })
 })
 watch(() => props.categories.map((c) => c.name).join('|'), () => {
   requestAnimationFrame(observeSections)
-  nextTick(updateScrollState)
+  refreshScrollState()
 })
-watch(locale, () => nextTick(updateScrollState))
+watch(locale, refreshScrollState)
 onBeforeUnmount(() => {
   observer?.disconnect()
-  window.removeEventListener('resize', updateScrollState)
   window.removeEventListener('pointermove', onPointerMove)
-  scrollRef.value?.removeEventListener('wheel', onWheel)
 })
 
 function jump(name: string) {
