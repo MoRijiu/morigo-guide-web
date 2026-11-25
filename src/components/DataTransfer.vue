@@ -10,6 +10,8 @@ import {
   parseBookmarks,
 } from '../utils/dataTransfer'
 import { buildShareUrl } from '../utils/share'
+import { buildSyncCode, parseSyncCode, applySyncPayload } from '../utils/syncCode'
+import { copyText } from '../utils/clipboard'
 import { useI18n } from '../i18n'
 
 const { t } = useI18n()
@@ -24,6 +26,33 @@ const isError = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
 
 const shareUrl = ref('')
+const syncCode = ref('')
+
+async function onGenerateSync() {
+  const code = buildSyncCode()
+  if (!code) {
+    message.value = t('dt.msgSyncEmpty')
+    isError.value = true
+    return
+  }
+  syncCode.value = code
+  const ok = await copyText(code)
+  message.value = ok ? t('dt.msgSyncCopied') : t('dt.msgSyncReady')
+  isError.value = false
+}
+
+function onImportSync() {
+  const payload = parseSyncCode(syncCode.value)
+  if (!payload) {
+    message.value = t('dt.errSyncInvalid')
+    isError.value = true
+    return
+  }
+  if (!window.confirm(t('dt.syncConfirm'))) return
+  applySyncPayload(payload)
+  // 偏好类 composable 都是启动时读取的单例，整表写入后刷新页面统一生效
+  window.location.reload()
+}
 
 async function onShare() {
   if (!customCategories.value.length && !favorites.value.length) {
@@ -192,6 +221,35 @@ async function onFile(e: Event) {
         @change="onFile"
       />
       <p class="px-2 mt-1 text-[11px] text-surface-300 dark:text-surface-600">{{ t('dt.replaceWarn') }}</p>
+
+      <div class="mt-3 pt-2 border-t border-surface-100 dark:border-surface-800">
+        <p class="px-2 text-[11px] font-medium text-surface-500 dark:text-surface-400">{{ t('dt.syncTitle') }}</p>
+        <button
+          type="button"
+          class="w-full flex items-center gap-1.5 px-2 py-1.5 mt-1 rounded-md text-xs font-medium text-surface-600 dark:text-surface-300 hover:bg-surface-50 dark:hover:bg-surface-800 transition-colors"
+          @click="onGenerateSync"
+        >
+          <Icon icon="mdi:sync" class="text-sm" />
+          {{ t('dt.syncGenerate') }}
+        </button>
+        <textarea
+          v-model="syncCode"
+          rows="3"
+          :placeholder="t('dt.syncPlaceholder')"
+          :aria-label="t('dt.syncTitle')"
+          class="w-full mt-1 px-2 py-1.5 rounded-md border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 text-[11px] text-surface-500 dark:text-surface-400 break-all"
+        />
+        <button
+          type="button"
+          class="w-full flex items-center gap-1.5 px-2 py-1.5 mt-1 rounded-md text-xs font-medium text-surface-600 dark:text-surface-300 hover:bg-surface-50 dark:hover:bg-surface-800 transition-colors disabled:opacity-40"
+          :disabled="!syncCode.trim()"
+          @click="onImportSync"
+        >
+          <Icon icon="mdi:cloud-sync-outline" class="text-sm" />
+          {{ t('dt.syncImport') }}
+        </button>
+        <p class="px-2 mt-1 text-[11px] text-surface-300 dark:text-surface-600">{{ t('dt.syncHint') }}</p>
+      </div>
       <p
         v-if="message"
         class="px-2 mt-2 text-[11px]"
