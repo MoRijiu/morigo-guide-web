@@ -1,7 +1,7 @@
 {
   "name": "morigo-guide-web",
   "private": true,
-  "version": "1.48.0",
+  "version": "1.49.0",
   "type": "module",
   "description": "MoriGo — an open-source, self-hostable navigation / start page. 去发现，去抵达 · Discover. Arrive.",
   "repository": {
@@ -19,12 +19,14 @@
   "dependencies": {
     "@fontsource/inter": "^5.3.0",
     "@fontsource/space-grotesk": "^5.3.0",
+    "qrcode": "^1.5.4",
     "vue": "^3.4.21"
   },
   "devDependencies": {
     "@iconify-json/mdi": "^1.2.3",
     "@iconify-json/simple-icons": "^1.2.104",
     "@iconify/vue": "^4.1.2",
+    "@types/qrcode": "^1.5.6",
     "@vitejs/plugin-vue": "^5.0.4",
     "autoprefixer": "^10.4.19",
     "postcss": "^8.4.38",
