@@ -50,8 +50,31 @@ function onOpenShareEvent() {
   void onShare()
 }
 
-onMounted(() => window.addEventListener('morigo:open-share', onOpenShareEvent))
-onBeforeUnmount(() => window.removeEventListener('morigo:open-share', onOpenShareEvent))
+// 关闭口径与其它弹层统一：按钮开关 + 点面板外关闭 + Esc 关闭。
+// 用 pointerdown 在按下时判定：触发按钮在本组件根元素内，不会误关；
+// 面板（移动端为 fixed 底部抽屉）同为根元素子节点，面板内操作不误伤。
+const rootEl = ref<HTMLElement | null>(null)
+
+function onDocPointerDown(e: PointerEvent) {
+  if (open.value && rootEl.value && !rootEl.value.contains(e.target as Node)) {
+    open.value = false
+  }
+}
+
+function onDocKeyDown(e: KeyboardEvent) {
+  if (e.key === 'Escape') open.value = false
+}
+
+onMounted(() => {
+  window.addEventListener('morigo:open-share', onOpenShareEvent)
+  document.addEventListener('pointerdown', onDocPointerDown)
+  document.addEventListener('keydown', onDocKeyDown)
+})
+onBeforeUnmount(() => {
+  window.removeEventListener('morigo:open-share', onOpenShareEvent)
+  document.removeEventListener('pointerdown', onDocPointerDown)
+  document.removeEventListener('keydown', onDocKeyDown)
+})
 
 function onExport() {
   downloadBackup(buildBackup(customCategories.value, favorites.value, recent.value))
@@ -89,7 +112,7 @@ async function onFile(e: Event) {
 </script>
 
 <template>
-  <div class="relative">
+  <div ref="rootEl" class="relative">
     <button
       type="button"
       class="flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium border border-surface-200 dark:border-surface-700 text-surface-600 dark:text-surface-300 hover:border-accent-400 hover:text-accent-600 dark:hover:text-accent-400 transition-colors"

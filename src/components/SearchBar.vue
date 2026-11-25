@@ -267,7 +267,7 @@ function onAddEngine() {
       </button>
     </div>
 
-    <div v-if="managerOpen" class="mb-2.5 mx-1 rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-900 p-3 text-left">
+    <div v-if="managerOpen" class="mb-2.5 mx-1 rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-900 p-3 text-left" @keydown.esc="managerOpen = false">
       <p class="text-xs font-medium text-surface-600 dark:text-surface-300 mb-2">{{ t('engine.customTitle') }}</p>
       <ul v-if="customEngines.length" class="mb-2.5 space-y-1">
         <li
