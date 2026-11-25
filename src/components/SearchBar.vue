@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import { Icon } from '@iconify/vue'
 import DynamicIcon from './DynamicIcon.vue'
 import siteConfig from '../config/site'
@@ -172,6 +172,17 @@ watch(dropdownVisible, (v) => {
 })
 
 const activeSuggest = ref(-1)
+const dropdownRef = ref<HTMLDivElement | null>(null)
+
+// 键盘选中项变化时把该行滚进下拉可视区（长列表时选中项可能在折叠线以下）
+watch(activeSuggest, (idx) => {
+  if (idx < 0) return
+  nextTick(() => {
+    dropdownRef.value
+      ?.querySelector('[data-suggest-active="true"]')
+      ?.scrollIntoView({ block: 'nearest' })
+  })
+})
 
 function pickSuggestion(s: Suggestion) {
   if (s.kind === 'site' && s.item) {
@@ -384,6 +395,7 @@ function onAddEngine() {
 
       <div
         v-if="dropdownVisible"
+        ref="dropdownRef"
         class="absolute left-0 right-0 top-full mt-1.5 z-50 rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-900 shadow-lg shadow-surface-900/5 overflow-y-auto max-h-[55dvh] text-left"
         role="listbox"
         :aria-label="t('search.suggestionsAria')"
@@ -404,6 +416,7 @@ function onAddEngine() {
           <div
             class="group flex items-center gap-2 px-3 py-1.5 cursor-pointer text-xs"
             :class="i === activeSuggest ? 'bg-accent-50 dark:bg-accent-500/10' : ''"
+            :data-suggest-active="i === activeSuggest"
             role="option"
             :aria-selected="i === activeSuggest"
             @mousedown.prevent="pickSuggestion(s)"
