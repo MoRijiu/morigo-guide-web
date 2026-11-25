@@ -64,6 +64,7 @@ export function sanitizeCategories(input: unknown): NavCategory[] {
           : {}),
         url,
         icon: typeof i.icon === 'string' && i.icon ? i.icon : 'mdi:web',
+        ...(i.favicon === true ? { favicon: true } : {}),
         ...(Array.isArray(i.aliases)
           ? { aliases: i.aliases.filter((a): a is string => typeof a === 'string') }
           : {}),

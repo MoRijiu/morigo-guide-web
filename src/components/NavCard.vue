@@ -130,16 +130,19 @@ const healthTitle = computed(() => {
   return health.value === 'never' ? t('card.neverTitle') : ''
 })
 const { isCustomItem } = useCustomData()
-// 未指定图标的条目（占位 mdi:web，来自自定义/导入/书签）自动探测站点 favicon，成功才替换
+// 两类条目自动探测站点 favicon、成功才替换：
+// ①未指定图标（占位 mdi:web，来自自定义/导入/书签）；②数据里显式标记 favicon:true
+//（无品牌图标、只有通用图标兜底的条目，如默认数据里的部分站点）
 const { resolvedFavicon, ensureFavicon } = useFavicon()
+const wantsFavicon = computed(() => props.item.icon === 'mdi:web' || props.item.favicon === true)
 const displayIcon = computed(() => {
-  if (props.item.icon !== 'mdi:web') return props.item.icon
+  if (!wantsFavicon.value) return props.item.icon
   return resolvedFavicon(props.item.url) ?? props.item.icon
 })
 watch(
-  () => [props.item.icon, props.item.url] as const,
-  ([icon, url]) => {
-    if (icon === 'mdi:web') ensureFavicon(url)
+  () => [props.item.icon, props.item.url, props.item.favicon] as const,
+  ([, url]) => {
+    if (wantsFavicon.value) ensureFavicon(url)
   },
   { immediate: true }
 )

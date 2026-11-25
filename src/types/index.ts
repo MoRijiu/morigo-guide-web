@@ -17,6 +17,9 @@ export interface NavItem {
   descriptionJa?: string
   url: string
   icon: IconValue
+  /** 优先使用站点自身 favicon（可选）：无品牌图标、只能用通用图标兜底的条目开启，
+   *  运行时探测 /favicon.ico 成功才替换兜底图标，失败仍显示 icon */
+  favicon?: boolean
   /** 搜索别名：拼音、简称、中文译名等，命中同样算匹配（高亮只作用于标题/描述） */
   aliases?: string[]
   /** 热门推荐：无搜索结果时在空状态里推荐 */
