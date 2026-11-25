@@ -20,6 +20,7 @@ addIcon("mdi:chart-bar", {"body":"<path fill=\"currentColor\" d=\"M22 21H2V3h2v1
 addIcon("mdi:chart-line", {"body":"<path fill=\"currentColor\" d=\"m16 11.78l4.24-7.33l1.73 1l-5.23 9.05l-6.51-3.75L5.46 19H22v2H2V3h2v14.54L9.5 8z\"/>","width":24,"height":24})
 addIcon("mdi:check", {"body":"<path fill=\"currentColor\" d=\"M21 7L9 19l-5.5-5.5l1.41-1.41L9 16.17L19.59 5.59z\"/>","width":24,"height":24})
 addIcon("mdi:chevron-down", {"body":"<path fill=\"currentColor\" d=\"M7.41 8.58L12 13.17l4.59-4.59L18 10l-6 6l-6-6z\"/>","width":24,"height":24})
+addIcon("mdi:chevron-left", {"body":"<path fill=\"currentColor\" d=\"M15.41 16.58L10.83 12l4.58-4.59L14 6l-6 6l6 6z\"/>","width":24,"height":24})
 addIcon("mdi:chevron-right", {"body":"<path fill=\"currentColor\" d=\"M8.59 16.58L13.17 12L8.59 7.41L10 6l6 6l-6 6z\"/>","width":24,"height":24})
 addIcon("mdi:clock-outline", {"body":"<path fill=\"currentColor\" d=\"M12 20a8 8 0 0 0 8-8a8 8 0 0 0-8-8a8 8 0 0 0-8 8a8 8 0 0 0 8 8m0-18a10 10 0 0 1 10 10a10 10 0 0 1-10 10C6.47 22 2 17.5 2 12A10 10 0 0 1 12 2m.5 5v5.25l4.5 2.67l-.75 1.23L11 13V7z\"/>","width":24,"height":24})
 addIcon("mdi:close", {"body":"<path fill=\"currentColor\" d=\"M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12z\"/>","width":24,"height":24})
