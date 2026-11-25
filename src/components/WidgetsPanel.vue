@@ -55,7 +55,10 @@ function locate() {
   )
 }
 
-function onDocClick(e: MouseEvent) {
+// 点外关闭用 pointerdown（与 DataTransfer 口径一致）：按下发生在 click 之前，
+// 命令面板条目 click 里同步 dispatch 打开本面板时，pointerdown 那一刻面板还没打开，不会误关；
+// 若用 click，同一事件冒泡到 document 会把刚打开的面板立刻关掉（点条目没反应）。
+function onDocPointerDown(e: PointerEvent) {
   if (open.value && rootEl.value && !rootEl.value.contains(e.target as Node)) {
     open.value = false
   }
@@ -70,12 +73,12 @@ function onOpenEvent() {
 }
 
 onMounted(() => {
-  document.addEventListener('click', onDocClick)
+  document.addEventListener('pointerdown', onDocPointerDown)
   document.addEventListener('keydown', onKey)
   window.addEventListener('morigo:open-widgets', onOpenEvent)
 })
 onBeforeUnmount(() => {
-  document.removeEventListener('click', onDocClick)
+  document.removeEventListener('pointerdown', onDocPointerDown)
   document.removeEventListener('keydown', onKey)
   window.removeEventListener('morigo:open-widgets', onOpenEvent)
 })
