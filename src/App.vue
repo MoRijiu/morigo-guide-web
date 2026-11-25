@@ -19,6 +19,7 @@ import DataTransfer from './components/DataTransfer.vue'
 import ThemePanel from './components/ThemePanel.vue'
 import StatsPanel from './components/StatsPanel.vue'
 import ShareImportModal from './components/ShareImportModal.vue'
+import ShortcutHelpModal from './components/ShortcutHelpModal.vue'
 import WidgetBar from './components/WidgetBar.vue'
 import WidgetsPanel from './components/WidgetsPanel.vue'
 import { useWidgets } from './composables/useWidgets'
@@ -474,6 +475,13 @@ function onGlobalKeydown(e: KeyboardEvent) {
     return
   }
 
+  // 「?」在非输入状态下打开快捷键帮助
+  if (e.key === '?' && !isEditableTarget(e)) {
+    e.preventDefault()
+    shortcutsOpen.value = true
+    return
+  }
+
   const fromSearch = (e.target as HTMLElement | null)?.id === 'morigo-search-input'
   // 搜索建议下拉打开时，方向键/回车归 SearchBar 处理
   if (fromSearch && suggestionsOpen.value && (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Enter')) return
@@ -501,6 +509,7 @@ function onGlobalKeydown(e: KeyboardEvent) {
 
 // ==================== 命令面板 ====================
 const paletteOpen = ref(false)
+const shortcutsOpen = ref(false)
 
 const paletteEntries = computed<PaletteEntry[]>(() => {
   const actions: PaletteEntry[] = [
@@ -513,6 +522,7 @@ const paletteEntries = computed<PaletteEntry[]>(() => {
     { kind: 'action', id: 'action:stats', title: t('action.stats'), hint: t('action.statsHint'), icon: 'mdi:chart-bar', actionId: 'open-stats' },
     { kind: 'action', id: 'action:share', title: t('action.share'), hint: t('action.shareHint'), icon: 'mdi:share-variant', actionId: 'open-share' },
     { kind: 'action', id: 'action:widgets', title: t('action.widgets'), hint: t('action.widgetsHint'), icon: 'mdi:view-dashboard-outline', actionId: 'open-widgets' },
+    { kind: 'action', id: 'action:shortcuts', title: t('action.shortcuts'), icon: 'mdi:keyboard-outline', actionId: 'open-shortcuts' },
     ...(canInstall.value
       ? [{ kind: 'action', id: 'action:install', title: t('action.install'), hint: t('action.installHint'), icon: 'mdi:download', actionId: 'install-app' } as PaletteEntry]
       : []),
@@ -593,6 +603,8 @@ async function onPalettePick(entry: PaletteEntry) {
       window.dispatchEvent(new Event('morigo:open-share'))
     } else if (entry.actionId === 'open-widgets') {
       window.dispatchEvent(new Event('morigo:open-widgets'))
+    } else if (entry.actionId === 'open-shortcuts') {
+      shortcutsOpen.value = true
     } else if (entry.actionId === 'install-app') {
       void promptInstall()
     }
@@ -833,6 +845,15 @@ onBeforeUnmount(() => {
           <span><kbd class="kbd-hint">Esc</kbd> {{ t('footer.clear') }}</span>
         </span>
         <span class="flex items-center gap-3 sm:ml-auto lg:ml-0">
+          <button
+            type="button"
+            class="inline-flex items-center gap-1 hover:text-surface-500 dark:hover:text-surface-400 transition-colors"
+            :aria-label="t('help.title')"
+            @click="shortcutsOpen = true"
+          >
+            <Icon icon="mdi:keyboard-outline" class="text-sm" />
+            <span class="hidden sm:inline">{{ t('help.footerBtn') }}</span>
+          </button>
           <span>{{ APP_VERSION_LABEL }}</span>
           <a :href="siteConfig.domainUrl" class="hover:text-surface-500 dark:hover:text-surface-400 transition-colors">{{ siteConfig.domain }}</a>
           <a
@@ -868,6 +889,7 @@ onBeforeUnmount(() => {
       @close="formOpen = false"
     />
     <ShareImportModal :payload="sharePayload" @import="onShareImport" @close="clearShareHash" />
+    <ShortcutHelpModal :open="shortcutsOpen" @close="shortcutsOpen = false" />
     <CardContextMenu
       :state="contextMenu"
       :move-targets="contextMoveTargets"
