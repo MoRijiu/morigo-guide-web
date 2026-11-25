@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted, onBeforeUnmount } from 'vue'
 import { Icon } from '@iconify/vue'
 import type { SharePayload } from '../utils/share'
 import { useI18n } from '../i18n'
@@ -8,6 +8,13 @@ const { t } = useI18n()
 
 const props = defineProps<{ payload: SharePayload | null }>()
 const emit = defineEmits<{ import: []; close: [] }>()
+
+// 关闭口径统一：遮罩点击 / 按钮之外，补 Esc 关闭（弹窗打开时才生效）
+function onDocKeyDown(e: KeyboardEvent) {
+  if (e.key === 'Escape' && props.payload) emit('close')
+}
+onMounted(() => document.addEventListener('keydown', onDocKeyDown))
+onBeforeUnmount(() => document.removeEventListener('keydown', onDocKeyDown))
 
 const itemCount = computed(
   () => props.payload?.customCategories.reduce((s, c) => s + c.items.length, 0) ?? 0

@@ -5,7 +5,7 @@ import DynamicIcon from './DynamicIcon.vue'
 import siteConfig from '../config/site'
 import { useI18n } from '../i18n'
 
-const { locale, toggleLocale, t } = useI18n()
+const { locale, setLocale, t } = useI18n()
 
 const isDark = ref(false)
 
@@ -66,15 +66,37 @@ if (typeof window !== 'undefined') {
         >
           <Icon :icon="isDark ? 'mdi:white-balance-sunny' : 'mdi:moon-waning-crescent'" class="text-lg" />
         </button>
-        <button
-          @click="toggleLocale"
-          class="h-8 px-2 rounded-md flex items-center gap-1 text-surface-400 hover:text-surface-600 dark:hover:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors"
-          :title="t('header.langTitle')"
-          :aria-label="t('header.langTitle')"
+        <!-- 语言切换：双段式，当前语言高亮——按钮直接呈现当前状态，不再只显示目标语言 -->
+        <div
+          class="flex items-center rounded-md border border-surface-200 dark:border-surface-700 overflow-hidden"
+          role="group"
+          :aria-label="t('header.langGroup')"
         >
-          <Icon icon="mdi:translate" class="text-base" />
-          <span class="text-[11px] font-medium">{{ locale === 'zh' ? 'EN' : '中文' }}</span>
-        </button>
+          <button
+            type="button"
+            class="h-8 px-2 text-[11px] font-medium transition-colors"
+            :class="locale === 'zh'
+              ? 'bg-accent-600 text-white'
+              : 'text-surface-400 hover:text-surface-600 dark:hover:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800'"
+            :aria-pressed="locale === 'zh'"
+            :aria-current="locale === 'zh' ? 'true' : undefined"
+            :title="t('header.toZh')"
+            :aria-label="t('header.toZh')"
+            @click="setLocale('zh')"
+          >中文</button>
+          <button
+            type="button"
+            class="h-8 px-2 text-[11px] font-medium transition-colors"
+            :class="locale === 'en'
+              ? 'bg-accent-600 text-white'
+              : 'text-surface-400 hover:text-surface-600 dark:hover:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800'"
+            :aria-pressed="locale === 'en'"
+            :aria-current="locale === 'en' ? 'true' : undefined"
+            :title="t('header.toEn')"
+            :aria-label="t('header.toEn')"
+            @click="setLocale('en')"
+          >EN</button>
+        </div>
       </div>
     </div>
   </header>
