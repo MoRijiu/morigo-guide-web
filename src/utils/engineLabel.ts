@@ -12,7 +12,7 @@ export function engineDisplayLabel(
   t: (key: string) => string
 ): string {
   if (engine.key === 'site') return t('engine.site')
-  if (locale === 'en' && engine.key === 'baidu') return 'Baidu'
-  if (locale === 'en' && engine.key === 'bing') return 'Bing'
+  if (locale !== 'zh' && engine.key === 'baidu') return 'Baidu'
+  if (locale !== 'zh' && engine.key === 'bing') return 'Bing'
   return engine.label
 }

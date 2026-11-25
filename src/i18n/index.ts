@@ -1,15 +1,15 @@
 import { ref } from 'vue'
 
 /**
- * 国际化（中/英双语）：UI 文案字典 + 语言状态单例。
- * - 语言存 localStorage `morigo:locale`；首次访问按浏览器语言猜测（en* → en，其余 zh）。
+ * 国际化（中/英/日三语）：UI 文案字典 + 语言状态单例。
+ * - 语言存 localStorage `morigo:locale`；首次访问按浏览器语言猜测（ja* → ja、en* → en，其余 zh）。
  * - 切换时同步 <html lang> 与 document.title。
- * - UI 文案走字典；默认导航数据的分类名/站点描述自 R26 起也双语
- *   （数据自带 nameEn/descriptionEn 字段，展示层按语言选，缺省回退中文）。
+ * - UI 文案走字典；默认导航数据的分类名/站点描述自 R26 起多语
+ *   （数据自带 nameEn/nameJa、descriptionEn/descriptionJa 字段，展示层按语言选，日语缺失回退英文再回退中文）。
  * - 用户自定义内容（自定义站点、导入的书签/清单）不翻译，原样显示。
  * - 存储不可用时静默降级为仅内存态。
  */
-export type Locale = 'zh' | 'en'
+export type Locale = 'zh' | 'en' | 'ja'
 
 const KEY = 'morigo:locale'
 
@@ -83,6 +83,7 @@ export const messages: Record<Locale, Record<string, string>> = {
     'header.langGroup': '语言切换',
     'header.toZh': '切换到中文',
     'header.toEn': 'Switch to English',
+    'header.toJa': '日本語に切り替え',
     'engine.site': '站内',
     'engine.manage': '管理搜索引擎',
     'engine.button': '引擎',
@@ -323,6 +324,7 @@ export const messages: Record<Locale, Record<string, string>> = {
     'header.langGroup': 'Language',
     'header.toZh': '切换到中文',
     'header.toEn': 'Switch to English',
+    'header.toJa': '日本語に切り替え',
     'engine.site': 'This site',
     'engine.manage': 'Manage search engines',
     'engine.button': 'Engines',
@@ -494,18 +496,260 @@ export const messages: Record<Locale, Record<string, string>> = {
     'action.widgets': 'Widget settings',
     'action.widgetsHint': 'Toggle clock / quote / countdown',
   },
+  ja: {
+    'app.tagline': '発見して、たどり着く',
+    'app.skip': 'ナビゲーションへスキップ',
+    'app.sitesCount': '全 {n} サイト',
+    'app.customHint': 'カスタムサイトはこのブラウザに保存されます',
+    'app.offline': 'オフライン中 · キャッシュ済みコンテンツは引き続き閲覧できます',
+    'app.deleteConfirm': 'サイト「{name}」を削除しますか？',
+    'cat.favorites': 'お気に入り',
+    'cat.recent': '最近の訪問',
+    'common.clear': 'クリア',
+    'common.cancel': 'キャンセル',
+    'common.add': '追加',
+    'common.save': '保存',
+    'toolbar.commandPalette': 'コマンドパレット',
+    'toolbar.addSite': 'サイトを追加',
+    'toolbar.installApp': 'アプリをインストール',
+    'toolbar.expandAll': 'すべて展開',
+    'toolbar.collapseAll': 'すべて折りたたむ',
+    'view.group': '表示切替',
+    'view.grid': 'グリッド表示',
+    'view.list': 'リスト表示',
+    'density.group': '密度切替',
+    'density.comfortable': 'ゆったり',
+    'density.compact': 'コンパクト',
+    'search.found': '「{q}」に関連する {n} 件のナビゲーション',
+    'search.kbdHint': '↑↓ 選択 · Enter 開く',
+    'empty.title': 'サイト内に「{q}」は見つかりませんでした',
+    'empty.hint': '短いキーワードや別名（例：「bilibili」「google」）で試すか、外部で検索：',
+    'empty.searchWith': '{name}で検索',
+    'empty.hot': '人気のおすすめ',
+    'footer.search': '検索',
+    'footer.select': '選択',
+    'footer.open': '開く',
+    'footer.clear': 'クリア',
+    'footer.github': 'GitHub リポジトリ',
+    'action.toggleTheme': 'ダーク / ライトモード切替',
+    'action.addSite': 'カスタムサイトを追加',
+    'action.export': 'バックアップ JSON をエクスポート',
+    'action.exportHint': 'カスタムサイト + お気に入り + 最近の訪問',
+    'action.top': 'トップへ戻る',
+    'action.view': 'グリッド / リスト表示切替',
+    'action.accent': 'アクセントカラーを切替',
+    'action.accentHint': 'バイオレット / ブルー / スカイ / エメラルド / アンバー / ローズ',
+    'action.stats': '訪問統計を見る',
+    'action.statsHint': 'ローカルの訪問トップとカテゴリ比率',
+    'action.share': '共有リンクを作成',
+    'action.shareHint': 'カスタムサイトとお気に入りをリンクにまとめる',
+    'action.install': 'アプリをインストール（PWA）',
+    'action.installHint': 'デスクトップ / ホーム画面に追加、オフライン対応',
+    'palette.jumpTo': '「{name}」へ移動',
+    'palette.sitesCount': '{n} サイト',
+    'palette.kindAction': 'コマンド',
+    'palette.kindCategory': 'カテゴリ',
+    'palette.kindSite': 'サイト',
+    'palette.aria': 'コマンドパレット',
+    'palette.placeholder': 'サイトを検索、またはコマンドを入力…',
+    'palette.searchAria': 'コマンドパレット検索',
+    'palette.empty': '「{q}」に一致するサイトやコマンドはありません',
+    'palette.select': '選択',
+    'palette.run': '実行',
+    'palette.openHint': 'K で開く',
+    'header.github': 'GitHub リポジトリ',
+    'header.toLight': 'ライトモードに切替',
+    'header.toDark': 'ダークモードに切替',
+    'header.light': 'ライトモード',
+    'header.dark': 'ダークモード',
+    'header.langGroup': '言語切替',
+    'header.toZh': '切换到中文',
+    'header.toEn': 'Switch to English',
+    'header.toJa': '日本語に切り替え',
+    'engine.site': 'サイト内',
+    'engine.manage': '検索エンジンを管理',
+    'engine.button': 'エンジン',
+    'engine.customTitle': 'カスタム検索エンジン',
+    'engine.delete': '検索エンジン {name} を削除',
+    'engine.none': 'カスタムエンジンはまだありません。下から追加してください。',
+    'engine.namePh': '名前（例：DuckDuckGo）',
+    'engine.urlPh': '検索 URL（例：https://duckduckgo.com/?q={q}）',
+    'engine.hint': 'URL 内の {q} がキーワードに置き換わります。{q} がない場合は末尾に追加されます。カスタムエンジンはこのブラウザにのみ保存されます。',
+    'engine.errName': 'まず検索エンジンに名前を付けてください',
+    'engine.errUrl': '検索 URL を入力してください（例：https://example.com/search?q={q}）',
+    'engine.errInvalid': 'URL が無効です：http(s) で始まる完全な検索 URL が必要です',
+    'search.placeholderSite': 'サイト内ナビゲーションを検索...（/ でフォーカス）',
+    'search.placeholderEngine': '{name}で検索...',
+    'search.inputAria': 'サイト内ナビゲーション検索',
+    'search.clear': '検索をクリア',
+    'search.clearTitle': 'クリア（Esc）',
+    'search.focusHint': '/ を押して検索ボックスにフォーカス',
+    'search.suggestionsAria': '検索候補',
+    'search.history': '検索履歴',
+    'search.hot': '人気の検索',
+    'search.deleteHistory': '履歴 {text} を削除',
+    'search.enginesAria': '検索エンジン切替',
+    'card.hot': '人気',
+    'card.edit': '編集',
+    'card.editAria': 'サイトを編集',
+    'card.delete': '削除',
+    'card.deleteAria': 'サイトを削除',
+    'card.fav': 'お気に入り',
+    'card.unfav': 'お気に入り解除',
+    'card.copy': 'リンクをコピー',
+    'card.copied': 'コピーしました',
+    'card.drag': 'ドラッグで並べ替え',
+    'section.sortHint': 'カード左のハンドルをドラッグするか、フォーカスして Alt+↑/↓ で並べ替え',
+    'section.expand': '「{name}」を展開',
+    'section.collapse': '「{name}」を折りたたむ',
+    'section.expandShort': '展開',
+    'section.collapseShort': '折りたたむ',
+    'section.copyAnchor': 'アンカーリンクをコピー',
+    'section.changeIcon': 'カテゴリアイコンを変更',
+    'section.moveCategory': 'カテゴリ「{name}」を移動',
+    'section.moveCategoryHint': 'ドラッグでカテゴリ順を変更、またはフォーカスして Alt+↑/↓',
+    'section.pin': 'カテゴリをピン留め',
+    'section.unpin': 'ピン留めを外す',
+    'section.pinnedTag': 'ピン留め中',
+    'section.hide': 'カテゴリを非表示',
+    'section.show': '再表示',
+    'section.hiddenTitle': '非表示のカテゴリ {n} 件 — クリックで復元',
+    'nav.aria': 'カテゴリクイックナビゲーション',
+    'backToTop': 'トップへ戻る',
+    'dt.button': 'インポート/エクスポート',
+    'dt.export': 'バックアップ JSON をエクスポート',
+    'dt.share': '共有リンクを作成（サイト + お気に入り）',
+    'dt.shareAria': '共有リンク',
+    'dt.importMode': 'インポート方式',
+    'dt.merge': 'マージ',
+    'dt.replace': '置き換え',
+    'dt.import': 'JSON バックアップ / ブラウザのブックマーク HTML をインポート',
+    'dt.replaceWarn': '置き換えると現在のカスタムサイトとお気に入りが上書きされます。先にバックアップをエクスポートしてください。',
+    'dt.msgNoShare': '共有できる内容がまだありません：カスタムサイトを追加するか、サイトをお気に入り登録してください',
+    'dt.msgShareCopied': '共有リンクをコピーしました。開いた人がそのままインポートできます',
+    'dt.msgShareReady': 'リンクを生成しました。下のリンクを手動でコピーしてください',
+    'dt.msgExported': 'バックアップをエクスポートしました（カスタムサイト・お気に入り・最近の訪問）',
+    'dt.msgBookmarks': 'ブックマークから {count} サイト（{cats} カテゴリ）をインポートしました',
+    'dt.msgImported': 'カスタムサイト {count} 件、お気に入り {fav} 件をインポートしました',
+    'dt.errInvalidJson': 'ファイルは有効な JSON ではありません',
+    'dt.errBadFormat': 'バックアップファイルの形式が正しくありません',
+    'dt.errNotMorigo': 'これは MoriGo のバックアップファイルではありません',
+    'dt.errNoLinks': 'ブックマークファイルにリンクが見つかりませんでした',
+    'dt.importedBookmarks': 'インポートしたブックマーク',
+    'dt.msgImportFail': 'インポート失敗：ファイル形式が正しくありません',
+    'theme.button': 'テーマ',
+    'theme.aria': 'テーマ設定',
+    'theme.accent': 'アクセントカラー',
+    'theme.bg': '背景',
+    'theme.bgAria': '背景プリセット',
+    'theme.glass': 'すりガラス',
+    'theme.note': 'テーマ設定はこのブラウザに保存されます。',
+    'accent.violet': 'バイオレット',
+    'accent.blue': 'ブルー',
+    'accent.sky': 'スカイ',
+    'accent.emerald': 'エメラルド',
+    'accent.amber': 'アンバー',
+    'accent.rose': 'ローズ',
+    'bg.none': '単色',
+    'bg.ocean': '海',
+    'bg.sunset': '夕焼け',
+    'bg.forest': '森',
+    'bg.aurora': 'オーロラ',
+    'bg.custom': 'カスタム',
+    'theme.customBg': 'カスタム画像背景',
+    'theme.uploadBg': '画像をアップロード',
+    'theme.replaceBg': '画像を変更',
+    'theme.removeBg': '削除',
+    'theme.bgDim': 'フェード強度',
+    'theme.bgBlur': 'ぼかし強度',
+    'theme.bgMode': '背景モード',
+    'theme.bgFixed': '固定',
+    'theme.bgScroll': 'ページとスクロール',
+    'theme.bgHint': '画像はこのブラウザにのみ保存され（自動圧縮）、サーバーにはアップロードされません。',
+    'theme.bgErrorType': '画像ファイルを選択してください',
+    'theme.bgErrorSize': '画像が大きすぎます（上限 10MB）',
+    'theme.bgErrorSave': '保存に失敗しました：ブラウザのストレージが使えません',
+    'theme.bgPreview': '現在の背景画像プレビュー',
+    'stats.button': '統計',
+    'stats.aria': 'ローカル訪問統計',
+    'stats.title': 'ローカル訪問統計',
+    'stats.localNote': 'ローカルのみ · 送信なし',
+    'stats.total': '総訪問回数',
+    'stats.visited': '訪問したサイト',
+    'stats.top': '訪問トップ',
+    'stats.byCategory': 'カテゴリ別訪問比率',
+    'stats.times': '{n} 回',
+    'stats.clear': '統計をクリア',
+    'stats.empty': 'まだ訪問記録がありません。サイトを開くと、ここに訪問トップとカテゴリ比率が表示されます。データはこのデバイスのブラウザにのみ保存されます。',
+    'stats.confirm': 'すべての訪問統計と最近の訪問記録をクリアしますか？お気に入りには影響しません。',
+    'form.addTitle': 'サイトを追加',
+    'form.editTitle': 'サイトを編集',
+    'form.close': '閉じる',
+    'form.name': '名前 *',
+    'form.namePh': '例：私のブログ',
+    'form.url': 'URL *',
+    'form.desc': '説明',
+    'form.descPh': 'このサイトが何かを一言で',
+    'form.category': 'カテゴリ',
+    'form.newCategory': '＋ 新しいカテゴリ…',
+    'form.icon': 'アイコン（任意）',
+    'form.newCatName': '新しいカテゴリ名 *',
+    'form.catIcon': 'カテゴリアイコン',
+    'form.newCatPh': '例：私のフォルダ',
+    'form.note': 'カスタムサイトはこのデバイスのブラウザにのみ保存され、アップロードされません。',
+    'form.save': '保存',
+    'form.errName': 'サイト名を入力してください',
+    'form.errUrl': 'URL が無効です。確認してください（例：example.com または https://example.com）',
+    'form.errCat': '新しいカテゴリ名を入力してください',
+    'share.aria': '共有リストをインポート',
+    'share.title': 'リストが共有されました',
+    'share.desc': '{cats} カテゴリ、{items} サイト{fav}を含みます。インポートすると既存のカスタムサイトとお気に入りにマージされ（URL で重複排除）、上書きはされません。',
+    'share.favPart': '、お気に入り {n} 件',
+    'share.import': '私のナビゲーションにインポート',
+    'share.dismiss': 'やめておく',
+    'widget.button': 'ウィジェット',
+    'widget.aria': 'ウィジェット設定',
+    'widget.region': 'ウィジェット',
+    'widget.clock': '時計 / 日付',
+    'widget.quote': '今日の一言',
+    'widget.countdown': 'カウントダウン',
+    'widget.weather': '天気',
+    'widget.weather.city': '天気の都市',
+    'widget.weather.myLocation': '現在地',
+    'widget.weather.locate': '位置取得',
+    'widget.weather.locating': '取得中…',
+    'widget.weather.locateError': '位置取得に失敗しました。手動で都市を選んでください',
+    'widget.weather.loading': '天気を読み込み中…',
+    'widget.weather.error': '天気を取得できません。更新をタップして再試行してください',
+    'widget.weather.refresh': '天気を更新',
+    'widget.weather.feels': '体感',
+    'widget.weather.humidity': '湿度',
+    'widget.weather.wind': '風速',
+    'widget.note': '時計・一言・カウントダウンはローカルで動作します。天気は有効時に Open-Meteo から取得し（無料・キー不要）、結果はローカルに 30 分キャッシュされます。',
+    'widget.another': '別の一言',
+    'widget.edit': 'カウントダウンを編集',
+    'widget.labelPh': 'カウントダウン名（例：試験）',
+    'widget.dateLabel': '目標日',
+    'widget.newYear': '元日',
+    'widget.daysLeft': 'あと {n} 日',
+    'widget.daysPast': '{n} 日経過',
+    'widget.today': '今日です',
+    'action.widgets': 'ウィジェット設定',
+    'action.widgetsHint': '時計 / 一言 / カウントダウンの切替',
+  },
 }
 
 function detectLocale(): Locale {
   try {
     const saved = localStorage.getItem(KEY)
-    if (saved === 'zh' || saved === 'en') return saved
+    if (saved === 'zh' || saved === 'en' || saved === 'ja') return saved
   } catch {
     // 存储不可用时仅按浏览器语言猜测
   }
-  return typeof navigator !== 'undefined' && navigator.language.toLowerCase().startsWith('en')
-    ? 'en'
-    : 'zh'
+  if (typeof navigator === 'undefined') return 'zh'
+  const nav = navigator.language.toLowerCase()
+  if (nav.startsWith('ja')) return 'ja'
+  return nav.startsWith('en') ? 'en' : 'zh'
 }
 
 const locale = ref<Locale>(detectLocale())
@@ -523,7 +767,7 @@ export function t(key: string, params?: Record<string, string | number>): string
 
 function applyLocale() {
   if (typeof document === 'undefined') return
-  document.documentElement.lang = locale.value === 'zh' ? 'zh-CN' : 'en'
+  document.documentElement.lang = locale.value === 'zh' ? 'zh-CN' : locale.value
   document.title = `MoriGo - ${t('app.tagline')}`
 }
 
@@ -546,17 +790,21 @@ export function useI18n() {
   }
 
   function toggleLocale() {
-    setLocale(locale.value === 'zh' ? 'en' : 'zh')
+    setLocale(locale.value === 'zh' ? 'en' : locale.value === 'en' ? 'ja' : 'zh')
   }
 
   /** 分类展示名：英文模式优先 nameEn，缺省回退 name（身份标识，永不直接展示原始字段以外的东西） */
-  function catName(cat: { name: string; nameEn?: string }): string {
-    return locale.value === 'en' && cat.nameEn ? cat.nameEn : cat.name
+  function catName(cat: { name: string; nameEn?: string; nameJa?: string }): string {
+    if (locale.value === 'ja') return cat.nameJa ?? cat.nameEn ?? cat.name
+    if (locale.value === 'en') return cat.nameEn ?? cat.name
+    return cat.name
   }
 
   /** 站点描述展示文案：英文模式优先 descriptionEn，缺省回退 description */
-  function itemDesc(item: { description: string; descriptionEn?: string }): string {
-    return locale.value === 'en' && item.descriptionEn ? item.descriptionEn : item.description
+  function itemDesc(item: { description: string; descriptionEn?: string; descriptionJa?: string }): string {
+    if (locale.value === 'ja') return item.descriptionJa ?? item.descriptionEn ?? item.description
+    if (locale.value === 'en') return item.descriptionEn ?? item.description
+    return item.description
   }
 
   return { locale, setLocale, toggleLocale, t, catName, itemDesc }

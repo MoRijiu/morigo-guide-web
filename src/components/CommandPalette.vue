@@ -46,7 +46,7 @@ const results = computed<PaletteEntry[]>(() => {
   for (const entry of props.entries) {
     const fields =
       entry.kind === 'site' && entry.item
-        ? [entry.item.title, entry.item.description, entry.item.descriptionEn ?? '', entry.item.url, ...(entry.item.aliases ?? [])]
+        ? [entry.item.title, entry.item.description, entry.item.descriptionEn ?? '', entry.item.descriptionJa ?? '', entry.item.url, ...(entry.item.aliases ?? [])]
         : [entry.title, entry.hint]
     const score = fuzzyScoreFields(q, fields)
     if (score >= 0) scored.push({ entry, score: score + (entry.kind === 'site' ? 0 : 50) })

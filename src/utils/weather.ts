@@ -7,27 +7,28 @@ export interface WeatherCity {
   id: string
   zh: string
   en: string
+  ja: string
   lat: number
   lon: number
 }
 
 /** 预设城市（id 'geo' 为浏览器定位，不在此表内） */
 export const WEATHER_CITIES: WeatherCity[] = [
-  { id: 'beijing', zh: '北京', en: 'Beijing', lat: 39.9042, lon: 116.4074 },
-  { id: 'shanghai', zh: '上海', en: 'Shanghai', lat: 31.2304, lon: 121.4737 },
-  { id: 'guangzhou', zh: '广州', en: 'Guangzhou', lat: 23.1291, lon: 113.2644 },
-  { id: 'shenzhen', zh: '深圳', en: 'Shenzhen', lat: 22.5431, lon: 114.0579 },
-  { id: 'chengdu', zh: '成都', en: 'Chengdu', lat: 30.5728, lon: 104.0668 },
-  { id: 'hangzhou', zh: '杭州', en: 'Hangzhou', lat: 30.2741, lon: 120.1551 },
-  { id: 'shenyang', zh: '沈阳', en: 'Shenyang', lat: 41.8057, lon: 123.4315 },
-  { id: 'tokyo', zh: '东京', en: 'Tokyo', lat: 35.6762, lon: 139.6503 },
-  { id: 'osaka', zh: '大阪', en: 'Osaka', lat: 34.6937, lon: 135.5023 },
-  { id: 'seoul', zh: '首尔', en: 'Seoul', lat: 37.5665, lon: 126.978 },
-  { id: 'singapore', zh: '新加坡', en: 'Singapore', lat: 1.3521, lon: 103.8198 },
-  { id: 'london', zh: '伦敦', en: 'London', lat: 51.5074, lon: -0.1278 },
-  { id: 'paris', zh: '巴黎', en: 'Paris', lat: 48.8566, lon: 2.3522 },
-  { id: 'newyork', zh: '纽约', en: 'New York', lat: 40.7128, lon: -74.006 },
-  { id: 'sydney', zh: '悉尼', en: 'Sydney', lat: -33.8688, lon: 151.2093 },
+  { id: 'beijing', zh: '北京', en: 'Beijing', ja: 'ペキン', lat: 39.9042, lon: 116.4074 },
+  { id: 'shanghai', zh: '上海', en: 'Shanghai', ja: 'シャンハイ', lat: 31.2304, lon: 121.4737 },
+  { id: 'guangzhou', zh: '广州', en: 'Guangzhou', ja: 'コウシュウ', lat: 23.1291, lon: 113.2644 },
+  { id: 'shenzhen', zh: '深圳', en: 'Shenzhen', ja: 'シンセン', lat: 22.5431, lon: 114.0579 },
+  { id: 'chengdu', zh: '成都', en: 'Chengdu', ja: 'セイトウ', lat: 30.5728, lon: 104.0668 },
+  { id: 'hangzhou', zh: '杭州', en: 'Hangzhou', ja: 'コウシュウ', lat: 30.2741, lon: 120.1551 },
+  { id: 'shenyang', zh: '沈阳', en: 'Shenyang', ja: 'シンヨウ', lat: 41.8057, lon: 123.4315 },
+  { id: 'tokyo', zh: '东京', en: 'Tokyo', ja: '東京', lat: 35.6762, lon: 139.6503 },
+  { id: 'osaka', zh: '大阪', en: 'Osaka', ja: '大阪', lat: 34.6937, lon: 135.5023 },
+  { id: 'seoul', zh: '首尔', en: 'Seoul', ja: 'ソウル', lat: 37.5665, lon: 126.978 },
+  { id: 'singapore', zh: '新加坡', en: 'Singapore', ja: 'シンガポール', lat: 1.3521, lon: 103.8198 },
+  { id: 'london', zh: '伦敦', en: 'London', ja: 'ロンドン', lat: 51.5074, lon: -0.1278 },
+  { id: 'paris', zh: '巴黎', en: 'Paris', ja: 'パリ', lat: 48.8566, lon: 2.3522 },
+  { id: 'newyork', zh: '纽约', en: 'New York', ja: 'ニューヨーク', lat: 40.7128, lon: -74.006 },
+  { id: 'sydney', zh: '悉尼', en: 'Sydney', ja: 'シドニー', lat: -33.8688, lon: 151.2093 },
 ]
 
 export interface WeatherNow {
@@ -48,44 +49,45 @@ interface Condition {
   iconNight: string
   zh: string
   en: string
+  ja: string
 }
 
-function cond(iconDay: string, iconNight: string, zh: string, en: string): Condition {
-  return { iconDay, iconNight, zh, en }
+function cond(iconDay: string, iconNight: string, zh: string, en: string, ja: string): Condition {
+  return { iconDay, iconNight, zh, en, ja }
 }
 
 const CONDITIONS: Record<number, Condition> = {
-  0: cond('mdi:weather-sunny', 'mdi:weather-night', '晴', 'Clear'),
-  1: cond('mdi:weather-partly-cloudy', 'mdi:weather-night-partly-cloudy', '大部晴朗', 'Mostly clear'),
-  2: cond('mdi:weather-partly-cloudy', 'mdi:weather-night-partly-cloudy', '多云', 'Partly cloudy'),
-  3: cond('mdi:weather-cloudy', 'mdi:weather-cloudy', '阴', 'Overcast'),
-  45: cond('mdi:weather-fog', 'mdi:weather-fog', '雾', 'Fog'),
-  48: cond('mdi:weather-fog', 'mdi:weather-fog', '雾凇', 'Rime fog'),
-  51: cond('mdi:weather-partly-rainy', 'mdi:weather-partly-rainy', '毛毛雨', 'Light drizzle'),
-  53: cond('mdi:weather-rainy', 'mdi:weather-rainy', '毛毛雨', 'Drizzle'),
-  55: cond('mdi:weather-rainy', 'mdi:weather-rainy', '毛毛雨', 'Dense drizzle'),
-  56: cond('mdi:weather-partly-snowy-rainy', 'mdi:weather-partly-snowy-rainy', '冻毛毛雨', 'Freezing drizzle'),
-  57: cond('mdi:weather-snowy-rainy', 'mdi:weather-snowy-rainy', '冻毛毛雨', 'Freezing drizzle'),
-  61: cond('mdi:weather-partly-rainy', 'mdi:weather-partly-rainy', '小雨', 'Light rain'),
-  63: cond('mdi:weather-rainy', 'mdi:weather-rainy', '中雨', 'Rain'),
-  65: cond('mdi:weather-pouring', 'mdi:weather-pouring', '大雨', 'Heavy rain'),
-  66: cond('mdi:weather-snowy-rainy', 'mdi:weather-snowy-rainy', '冻雨', 'Freezing rain'),
-  67: cond('mdi:weather-snowy-rainy', 'mdi:weather-snowy-rainy', '冻雨', 'Freezing rain'),
-  71: cond('mdi:weather-partly-snowy', 'mdi:weather-partly-snowy', '小雪', 'Light snow'),
-  73: cond('mdi:weather-snowy', 'mdi:weather-snowy', '中雪', 'Snow'),
-  75: cond('mdi:weather-snowy-heavy', 'mdi:weather-snowy-heavy', '大雪', 'Heavy snow'),
-  77: cond('mdi:weather-snowy', 'mdi:weather-snowy', '雪粒', 'Snow grains'),
-  80: cond('mdi:weather-partly-rainy', 'mdi:weather-partly-rainy', '阵雨', 'Light showers'),
-  81: cond('mdi:weather-rainy', 'mdi:weather-rainy', '阵雨', 'Showers'),
-  82: cond('mdi:weather-pouring', 'mdi:weather-pouring', '暴雨', 'Violent showers'),
-  85: cond('mdi:weather-partly-snowy', 'mdi:weather-partly-snowy', '阵雪', 'Snow showers'),
-  86: cond('mdi:weather-snowy', 'mdi:weather-snowy', '阵雪', 'Snow showers'),
-  95: cond('mdi:weather-lightning', 'mdi:weather-lightning', '雷阵雨', 'Thunderstorm'),
-  96: cond('mdi:weather-lightning-rainy', 'mdi:weather-lightning-rainy', '雷阵雨伴冰雹', 'Thunderstorm with hail'),
-  99: cond('mdi:weather-hail', 'mdi:weather-hail', '雷阵雨伴冰雹', 'Thunderstorm with hail'),
+  0: cond('mdi:weather-sunny', 'mdi:weather-night', '晴', 'Clear', '晴れ'),
+  1: cond('mdi:weather-partly-cloudy', 'mdi:weather-night-partly-cloudy', '大部晴朗', 'Mostly clear', 'だいたい晴れ'),
+  2: cond('mdi:weather-partly-cloudy', 'mdi:weather-night-partly-cloudy', '多云', 'Partly cloudy', '晴れ時々曇り'),
+  3: cond('mdi:weather-cloudy', 'mdi:weather-cloudy', '阴', 'Overcast', '曇り'),
+  45: cond('mdi:weather-fog', 'mdi:weather-fog', '雾', 'Fog', '霧'),
+  48: cond('mdi:weather-fog', 'mdi:weather-fog', '雾凇', 'Rime fog', '霧氷'),
+  51: cond('mdi:weather-partly-rainy', 'mdi:weather-partly-rainy', '毛毛雨', 'Light drizzle', '弱い霧雨'),
+  53: cond('mdi:weather-rainy', 'mdi:weather-rainy', '毛毛雨', 'Drizzle', '霧雨'),
+  55: cond('mdi:weather-rainy', 'mdi:weather-rainy', '毛毛雨', 'Dense drizzle', '強い霧雨'),
+  56: cond('mdi:weather-partly-snowy-rainy', 'mdi:weather-partly-snowy-rainy', '冻毛毛雨', 'Freezing drizzle', '弱い凍結霧雨'),
+  57: cond('mdi:weather-snowy-rainy', 'mdi:weather-snowy-rainy', '冻毛毛雨', 'Freezing drizzle', '凍結霧雨'),
+  61: cond('mdi:weather-partly-rainy', 'mdi:weather-partly-rainy', '小雨', 'Light rain', '弱い雨'),
+  63: cond('mdi:weather-rainy', 'mdi:weather-rainy', '中雨', 'Rain', '雨'),
+  65: cond('mdi:weather-pouring', 'mdi:weather-pouring', '大雨', 'Heavy rain', '強い雨'),
+  66: cond('mdi:weather-snowy-rainy', 'mdi:weather-snowy-rainy', '冻雨', 'Freezing rain', '凍結雨'),
+  67: cond('mdi:weather-snowy-rainy', 'mdi:weather-snowy-rainy', '冻雨', 'Freezing rain', '凍結雨'),
+  71: cond('mdi:weather-partly-snowy', 'mdi:weather-partly-snowy', '小雪', 'Light snow', '弱い雪'),
+  73: cond('mdi:weather-snowy', 'mdi:weather-snowy', '中雪', 'Snow', '雪'),
+  75: cond('mdi:weather-snowy-heavy', 'mdi:weather-snowy-heavy', '大雪', 'Heavy snow', '強い雪'),
+  77: cond('mdi:weather-snowy', 'mdi:weather-snowy', '雪粒', 'Snow grains', '雪粒'),
+  80: cond('mdi:weather-partly-rainy', 'mdi:weather-partly-rainy', '阵雨', 'Light showers', '弱いにわか雨'),
+  81: cond('mdi:weather-rainy', 'mdi:weather-rainy', '阵雨', 'Showers', 'にわか雨'),
+  82: cond('mdi:weather-pouring', 'mdi:weather-pouring', '暴雨', 'Violent showers', '激しいにわか雨'),
+  85: cond('mdi:weather-partly-snowy', 'mdi:weather-partly-snowy', '阵雪', 'Snow showers', 'にわか雪'),
+  86: cond('mdi:weather-snowy', 'mdi:weather-snowy', '阵雪', 'Snow showers', 'にわか雪'),
+  95: cond('mdi:weather-lightning', 'mdi:weather-lightning', '雷阵雨', 'Thunderstorm', '雷雨'),
+  96: cond('mdi:weather-lightning-rainy', 'mdi:weather-lightning-rainy', '雷阵雨伴冰雹', 'Thunderstorm with hail', '雹を伴う雷雨'),
+  99: cond('mdi:weather-hail', 'mdi:weather-hail', '雷阵雨伴冰雹', 'Thunderstorm with hail', '雹を伴う雷雨'),
 }
 
-const FALLBACK = cond('mdi:weather-cloudy', 'mdi:weather-cloudy', '多云', 'Cloudy')
+const FALLBACK = cond('mdi:weather-cloudy', 'mdi:weather-cloudy', '多云', 'Cloudy', '曇り')
 
 export function weatherCondition(code: number): Condition {
   return CONDITIONS[code] ?? FALLBACK

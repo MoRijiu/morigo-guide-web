@@ -43,6 +43,7 @@ function matches(item: NavItem, k: string): boolean {
     item.title.toLowerCase().includes(needle) ||
     item.description.toLowerCase().includes(needle) ||
     (item.descriptionEn ?? '').toLowerCase().includes(needle) ||
+    (item.descriptionJa ?? '').toLowerCase().includes(needle) ||
     item.url.toLowerCase().includes(needle) ||
     (item.aliases ?? []).some((a) => a.toLowerCase().includes(needle))
   )
