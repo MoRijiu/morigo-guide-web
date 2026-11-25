@@ -10,7 +10,13 @@ import {
   parseBookmarks,
 } from '../utils/dataTransfer'
 import { buildShareUrl } from '../utils/share'
-import { buildSyncCode, parseSyncCode, applySyncPayload } from '../utils/syncCode'
+import {
+  buildSyncCode,
+  parseSyncCode,
+  applySyncPayload,
+  looksLikeSyncCode,
+} from '../utils/syncCode'
+import SyncScanModal from './SyncScanModal.vue'
 import { buildSyncQrDataUrl, SYNC_QR_MAX_BYTES } from '../utils/syncQr'
 import {
   loadWebDavConfig,
@@ -51,6 +57,21 @@ watch(syncCode, () => {
 })
 /** 同步加密口令：只在本次面板会话内使用、不落盘；生成与导入/WebDAV 共用 */
 const syncPassphrase = ref('')
+
+/** 扫码导入弹窗（R64）：扫到内容先校验外形，是同步码才填框并走导入确认 */
+const scanOpen = ref(false)
+
+function onScanned(text: string) {
+  scanOpen.value = false
+  const code = text.trim()
+  if (!looksLikeSyncCode(code)) {
+    message.value = t('dt.scanNotSync')
+    isError.value = true
+    return
+  }
+  syncCode.value = code
+  void onImportSync()
+}
 
 async function onGenerateSync() {
   const encrypted = syncPassphrase.value.length > 0
@@ -195,7 +216,10 @@ function onDocPointerDown(e: PointerEvent) {
 }
 
 function onDocKeyDown(e: KeyboardEvent) {
-  if (e.key === 'Escape') open.value = false
+  if (e.key !== 'Escape') return
+  // 扫码弹窗打开时 Esc 只关弹窗，不连带关掉背后的面板
+  if (scanOpen.value) scanOpen.value = false
+  else open.value = false
 }
 
 onMounted(() => {
@@ -379,6 +403,14 @@ async function onFile(e: Event) {
           <Icon icon="mdi:cloud-sync-outline" class="text-sm" />
           {{ t('dt.syncImport') }}
         </button>
+        <button
+          type="button"
+          class="w-full flex items-center gap-1.5 px-2 py-1.5 mt-1 rounded-md text-xs font-medium text-surface-600 dark:text-surface-300 hover:bg-surface-50 dark:hover:bg-surface-800 transition-colors"
+          @click="scanOpen = true"
+        >
+          <Icon icon="mdi:qrcode-scan" class="text-sm" />
+          {{ t('dt.scanImport') }}
+        </button>
         <p class="px-2 mt-1 text-[11px] text-surface-300 dark:text-surface-600">{{ t('dt.syncPassHint') }}</p>
         <p class="px-2 mt-1 text-[11px] text-surface-300 dark:text-surface-600">{{ t('dt.syncHint') }}</p>
 
@@ -440,5 +472,6 @@ async function onFile(e: Event) {
         role="status"
       >{{ message }}</p>
     </div>
+    <SyncScanModal :open="scanOpen" @close="scanOpen = false" @scanned="onScanned" />
   </div>
 </template>
