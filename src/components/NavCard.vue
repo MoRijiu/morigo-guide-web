@@ -7,6 +7,7 @@ import { toSlug } from '../utils/slug'
 import { iconTint } from '../utils/iconTint'
 import { copyText } from '../utils/clipboard'
 import { useUserData } from '../composables/useUserData'
+import { siteHealth, daysSince } from '../utils/siteHealth'
 import { useCustomData } from '../composables/useCustomData'
 import type { NavItem } from '../types'
 import { useI18n } from '../i18n'
@@ -116,7 +117,17 @@ watch(
   }
 )
 
-const { isFavorite, toggleFavorite, recordVisit } = useUserData()
+const { isFavorite, toggleFavorite, recordVisit, lastVisit } = useUserData()
+const health = computed(() =>
+  siteHealth({ lastVisitAt: lastVisit.value[props.item.url], isFavorite: favorited.value })
+)
+const healthTitle = computed(() => {
+  if (health.value === 'stale') {
+    const ts = lastVisit.value[props.item.url]
+    return ts ? t('card.staleTitle', { days: daysSince(ts) }) : t('card.stale')
+  }
+  return health.value === 'never' ? t('card.neverTitle') : ''
+})
 const { isCustomItem } = useCustomData()
 /** 显示拖拽手柄：可排序，或可跨分类拖拽且本条目是自定义站点 */
 const showHandle = computed(
@@ -217,10 +228,23 @@ async function onCopyLink(e: Event) {
       <DynamicIcon :icon="item.icon" :class="(density === 'compact' ? 'text-base ' : 'text-lg ') + tint.text" />
     </div>
     <div class="min-w-0 flex-1">
-      <h3 class="text-[13px] font-medium text-surface-700 dark:text-surface-200 truncate group-hover:text-accent-600 dark:group-hover:text-accent-400 transition-colors duration-200">
-        <HighlightText :text="item.title" :keyword="keyword" />
-        <Icon v-if="item.hot" icon="mdi:fire" class="inline-block text-[11px] text-orange-400 ml-1 -mt-0.5" :aria-label="t('card.hot')" />
-      </h3>
+      <div class="flex items-center gap-1.5 min-w-0">
+        <h3 class="text-[13px] font-medium text-surface-700 dark:text-surface-200 truncate group-hover:text-accent-600 dark:group-hover:text-accent-400 transition-colors duration-200">
+          <HighlightText :text="item.title" :keyword="keyword" />
+          <Icon v-if="item.hot" icon="mdi:fire" class="inline-block text-[11px] text-orange-400 ml-1 -mt-0.5" :aria-label="t('card.hot')" />
+        </h3>
+        <span
+          v-if="health"
+          data-site-health
+          :title="healthTitle"
+          :class="[
+            'shrink-0 text-[10px] leading-none px-1 py-0.5 rounded-full border',
+            health === 'stale'
+              ? 'text-amber-600 dark:text-amber-400 border-amber-300/70 dark:border-amber-500/40 bg-amber-50 dark:bg-amber-500/10'
+              : 'text-surface-400 dark:text-surface-500 border-surface-200 dark:border-surface-700',
+          ]"
+        >{{ health === 'stale' ? t('card.stale') : t('card.never') }}</span>
+      </div>
       <p class="text-[11px] text-surface-400 dark:text-surface-500 truncate mt-0.5 leading-tight">
         <HighlightText :text="itemDesc(item)" :keyword="keyword" />
       </p>
