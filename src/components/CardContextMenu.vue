@@ -64,6 +64,11 @@ watch(
   }
 )
 
+// 「移动到分类」展开/收起会改变菜单高度，须重新夹位，否则菜单底部会溢出视口
+watch(moveOpen, () => {
+  if (props.state) void place()
+})
+
 function onDocPointerDown(e: PointerEvent) {
   if (props.state && menuRef.value && !menuRef.value.contains(e.target as Node)) emit('close')
 }
@@ -83,8 +88,15 @@ function onDocKeyDown(e: KeyboardEvent) {
     items[next]?.focus()
   }
 }
-function onScrollOrResize() {
-  if (props.state) emit('close')
+function onScrollOrResize(e: Event) {
+  if (!props.state) return
+  // 菜单内部滚动（移动目标列表、菜单本体限高滚动）不算页面滚动，不能把菜单关掉，
+  // 否则折叠线以下的目标分类永远点不到
+  if (e.type === 'scroll' && menuRef.value) {
+    const target = e.target as Node | null
+    if (target && (target === menuRef.value || menuRef.value.contains(target))) return
+  }
+  emit('close')
 }
 
 onMounted(() => {
@@ -110,7 +122,7 @@ const btnClass =
     ref="menuRef"
     role="menu"
     :aria-label="t('card.menuAria', { name: item.title })"
-    class="fixed z-[70] w-56 max-w-[calc(100vw-16px)] py-1.5 rounded-xl bg-white dark:bg-surface-900 border border-surface-100 dark:border-surface-800 shadow-xl"
+    class="fixed z-[70] w-56 max-w-[calc(100vw-16px)] max-h-[calc(100dvh-16px)] overflow-y-auto py-1.5 rounded-xl bg-white dark:bg-surface-900 border border-surface-100 dark:border-surface-800 shadow-xl"
     :style="{ left: `${pos.left}px`, top: `${pos.top}px` }"
   >
     <p class="px-3 pt-1 pb-1.5 text-[11px] font-medium text-surface-400 dark:text-surface-500 truncate">{{ item.title }}</p>
