@@ -786,7 +786,7 @@ onBeforeUnmount(() => {
 
       <div v-else class="py-14">
         <div class="text-center mb-8">
-          <Icon icon="mdi:compass-off-outline" class="text-4xl text-surface-300 dark:text-surface-600 mb-3" />
+          <Icon icon="mdi:compass-off-outline" class="text-4xl text-surface-300 dark:text-surface-600 mb-3 mx-auto" />
           <p class="text-sm text-surface-500 dark:text-surface-400">
             {{ t('empty.title', { q: trimmedKeyword }) }}
           </p>
