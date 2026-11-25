@@ -166,6 +166,13 @@
     @apply flex items-center gap-2.5 mb-5 pb-2 border-b border-surface-100 dark:border-surface-800;
   }
 
+  /* 跨分类拖拽的落点高亮（CategorySection 拖拽时直接给目标 section 加/摘此类） */
+  section.morigo-drop-target {
+    outline: 2px dashed rgb(var(--accent-500) / 0.65);
+    outline-offset: 6px;
+    border-radius: 12px;
+  }
+
   .kbd-hint {
     @apply inline-block px-1 py-px rounded border border-surface-200 dark:border-surface-700
            text-[10px] leading-none text-surface-400 dark:text-surface-500 align-middle;
