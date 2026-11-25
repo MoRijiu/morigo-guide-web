@@ -94,7 +94,7 @@ if (typeof window !== 'undefined') {
           :title="isDark ? t('header.light') : t('header.dark')"
           :aria-label="isDark ? t('header.toLight') : t('header.toDark')"
         >
-          <Icon :icon="isDark ? 'mdi:white-balance-sunny' : 'mdi:moon-waning-crescent'" :class="['text-lg', !isDark && '-rotate-[24deg]']" />
+          <Icon :icon="isDark ? 'mdi:white-balance-sunny' : 'mdi:moon-waxing-crescent'" class="text-lg" />
         </button>
         <!-- 语言切换：与相邻按钮同款的图标按钮形态，按钮内短码（中/EN/あ）呈现当前语言，点开下拉三语选 -->
         <div ref="langRoot" class="relative">
