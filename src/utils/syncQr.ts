@@ -1,5 +1,3 @@
-import QRCode from 'qrcode'
-
 /**
  * 同步码二维码（R61）：把生成的同步码渲染成二维码，另一台设备用相机
  * 扫码即可拿到全文、再粘贴进导入框，全程不经任何服务器。
@@ -13,6 +11,9 @@ export const SYNC_QR_MAX_BYTES = 2900
 export async function buildSyncQrDataUrl(code: string): Promise<string | null> {
   if (new TextEncoder().encode(code).length > SYNC_QR_MAX_BYTES) return null
   try {
+    // qrcode 库只在生成二维码时才用到，动态 import 拆出主 bundle 按需加载；
+    // 加载失败与编码失败走同一兜底（返回 null，界面提示改用文本/WebDAV）。
+    const { default: QRCode } = await import('qrcode')
     return await QRCode.toDataURL(code, {
       errorCorrectionLevel: 'L',
       margin: 2,
