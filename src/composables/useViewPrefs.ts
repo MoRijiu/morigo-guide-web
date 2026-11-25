@@ -13,10 +13,12 @@ interface ViewPrefs {
   view: ViewMode
   density: Density
   collapsed: string[]
+  /** 分类展示顺序（分类名列表）；未列出的分类按原始顺序排在其后 */
+  categoryOrder: string[]
 }
 
 function load(): ViewPrefs {
-  const fallback: ViewPrefs = { view: 'grid', density: 'comfortable', collapsed: [] }
+  const fallback: ViewPrefs = { view: 'grid', density: 'comfortable', collapsed: [], categoryOrder: [] }
   try {
     const raw = localStorage.getItem(KEY)
     if (!raw) return fallback
@@ -28,6 +30,9 @@ function load(): ViewPrefs {
       collapsed: Array.isArray(p.collapsed)
         ? p.collapsed.filter((x): x is string => typeof x === 'string')
         : [],
+      categoryOrder: Array.isArray(p.categoryOrder)
+        ? p.categoryOrder.filter((x): x is string => typeof x === 'string')
+        : [],
     }
   } catch {
     return fallback
@@ -38,12 +43,18 @@ const initial = load()
 const view = ref<ViewMode>(initial.view)
 const density = ref<Density>(initial.density)
 const collapsed = ref<string[]>(initial.collapsed)
+const categoryOrder = ref<string[]>(initial.categoryOrder)
 
 function save() {
   try {
     localStorage.setItem(
       KEY,
-      JSON.stringify({ view: view.value, density: density.value, collapsed: collapsed.value })
+      JSON.stringify({
+        view: view.value,
+        density: density.value,
+        collapsed: collapsed.value,
+        categoryOrder: categoryOrder.value,
+      })
     )
   } catch {
     // 隐私模式等存储不可用时仅内存态生效
@@ -78,5 +89,21 @@ export function useViewPrefs() {
     save()
   }
 
-  return { view, density, collapsed, setView, setDensity, isCollapsed, toggleCollapsed, setAllCollapsed }
+  function setCategoryOrder(names: string[]) {
+    categoryOrder.value = [...names]
+    save()
+  }
+
+  return {
+    view,
+    density,
+    collapsed,
+    categoryOrder,
+    setView,
+    setDensity,
+    isCollapsed,
+    toggleCollapsed,
+    setAllCollapsed,
+    setCategoryOrder,
+  }
 }

@@ -27,6 +27,10 @@ const props = defineProps<{
   sortable?: boolean
   /** 是否可更换分类图标（纯自定义分类） */
   customIconEditable?: boolean
+  /** 本分类是否可拖拽重排（分类本身的顺序） */
+  categorySortable?: boolean
+  /** 本分类正在被拖拽重排 */
+  categoryDragging?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -36,7 +40,25 @@ const emit = defineEmits<{
   'toggle-collapse': []
   reorder: [urls: string[]]
   'update-icon': [icon: string]
+  'category-sort-start': []
+  'category-sort-move': [delta: number]
 }>()
+
+// ==================== 分类重排（手柄：指针拖拽由父级统一处理，Alt+↑/↓ 键盘移动） ====================
+function onCategoryHandlePointerDown(e: PointerEvent) {
+  e.preventDefault()
+  e.stopPropagation()
+  emit('category-sort-start')
+}
+
+function onCategoryHandleKeydown(e: KeyboardEvent) {
+  if (!e.altKey) return
+  if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+    e.preventDefault()
+    e.stopPropagation()
+    emit('category-sort-move', e.key === 'ArrowUp' ? -1 : 1)
+  }
+}
 
 // ==================== 分类图标更换（仅纯自定义分类） ====================
 const iconPickerOpen = ref(false)
@@ -154,8 +176,19 @@ function copyAnchor(id: string) {
 </script>
 
 <template>
-  <section :id="categoryId" :class="collapsed ? 'mb-4 scroll-mt-28' : 'mb-9 scroll-mt-28'">
+  <section :id="categoryId" :class="[collapsed ? 'mb-4 scroll-mt-28' : 'mb-9 scroll-mt-28', categoryDragging ? 'opacity-60' : '']">
     <div class="category-bar group/cat">
+      <button
+        v-if="categorySortable"
+        type="button"
+        class="p-0.5 -ml-1.5 rounded cursor-grab active:cursor-grabbing text-surface-300 dark:text-surface-600 hover:text-accent-500 transition-colors touch-none"
+        :aria-label="t('section.moveCategory', { name: catName(category) })"
+        :title="t('section.moveCategoryHint')"
+        @pointerdown="onCategoryHandlePointerDown"
+        @keydown="onCategoryHandleKeydown"
+      >
+        <Icon icon="mdi:drag-vertical" class="text-base block" />
+      </button>
       <button
         type="button"
         class="p-0.5 -ml-1 rounded text-surface-300 dark:text-surface-600 hover:text-accent-500 transition-colors"
