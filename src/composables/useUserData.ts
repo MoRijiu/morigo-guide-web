@@ -115,5 +115,5 @@ export function useUserData() {
     save(FAV_KEY, favorites.value)
   }
 
-  return { favorites, recent, visitCounts, totalVisits, isFavorite, toggleFavorite, recordVisit, clearRecent, clearStats, importUserData, setFavoritesOrder }
+  return { favorites, favoriteSet, recent, visitCounts, totalVisits, isFavorite, toggleFavorite, recordVisit, clearRecent, clearStats, importUserData, setFavoritesOrder }
 }
