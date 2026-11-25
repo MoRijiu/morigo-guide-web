@@ -1,0 +1,27 @@
+name: Link check
+
+# Weekly sweep of the default navigation links (scripts/check-links.mjs).
+# Deliberately non-strict: reachability varies by runner network/region, so
+# this job reports instead of failing. Run it manually from the Actions tab
+# whenever you want a fresh report.
+on:
+  schedule:
+    - cron: '17 3 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check-links:
+    name: Check default navigation links
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Run link check (console only, no report file)
+        run: node scripts/check-links.mjs --no-report

@@ -8,11 +8,13 @@ MoriGo is an open-source, self-hostable navigation / start page. Static only, no
 
 🔗 **在线预览 / Live demo**：[go.morijiu.cn](https://go.morijiu.cn)
 
+[![CI](https://github.com/MoRijiu/morigo-guide-web/actions/workflows/ci.yml/badge.svg)](https://github.com/MoRijiu/morigo-guide-web/actions/workflows/ci.yml)
+
 ---
 
 ## ✨ 特性 Features
 
-- **精选默认数据** — 9 大分类、51 个站点（常用工具 / AI 工具 / 前端开发 / 设计资源 / 后端 & DevOps / 云服务 / 效率工具 / 学习资源 / 影音娱乐），全部带搜索别名（拼音、简称、中文译名）
+- **精选默认数据** — 12 大分类、109 个站点（常用工具 / AI 工具 / 前端开发 / 设计资源 / 后端 & DevOps / 云服务 / 效率工具 / 学习资源 / 影音娱乐 / 游戏 / 购物 / 旅行出行），全部带搜索别名（拼音、简称、中文译名）
 - **快搜索** — 关键词高亮、别名/中英日三语匹配、无结果时外部引擎直达 + 热门推荐；搜索建议下拉（历史 + 热门 + 站点直达）、搜索历史、自定义搜索引擎（`{q}` 模板）
 - **命令面板** — `Ctrl/⌘ + K` 全局呼出，模糊搜索站点 + 动作命令（切换主题、加站点、导出、统计、分享……），全键盘操作
 - **收藏与最近访问** — 星标收藏置顶分组、最近访问自动记录、一键复制链接
@@ -75,6 +77,8 @@ npm run check:links  # 链接体检：检查默认数据全部链接可达性，
 ```
 
 构建产物在 `dist/`，丢到任何静态托管（Nginx / Vercel / Netlify / Cloudflare Pages / GitHub Pages…）即可上线。
+
+仓库带 GitHub Actions：每个 PR 与 push 到 `main` 都会自动跑类型检查 + 构建并校验产物（`ci.yml`）；链接体检另有每周定时 + 手动触发的工作流（`link-check.yml`，只出报告不拦合并）。
 
 ## 🧩 放你自己的站点清单 Your Own List
 
