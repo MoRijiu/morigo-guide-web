@@ -84,7 +84,8 @@ const orderedMergedCategories = computed<NavCategory[]>(() => {
 })
 
 const filteredCategories = computed(() => {
-  const data = orderedMergedCategories.value
+  // 隐藏分类不出现在主列表、导航条与搜索结果中（可在页面底部恢复）
+  const data = orderedMergedCategories.value.filter((c) => !isHidden(c.name))
   if (!trimmedKeyword.value) return data
 
   return data
@@ -192,8 +193,21 @@ function onShareImport() {
 }
 
 // ==================== 视图与布局 ====================
-const { view, density, setView, setDensity, isCollapsed, toggleCollapsed, setAllCollapsed, categoryOrder, setCategoryOrder } =
-  useViewPrefs()
+const {
+  view,
+  density,
+  setView,
+  setDensity,
+  isCollapsed,
+  toggleCollapsed,
+  setAllCollapsed,
+  categoryOrder,
+  setCategoryOrder,
+  isPinned,
+  togglePinned,
+  isHidden,
+  toggleHidden,
+} = useViewPrefs()
 
 const allCollapsed = computed(
   () =>
@@ -232,11 +246,18 @@ const personalCategories = computed<NavCategory[]>(() => {
   return cats
 })
 
-const displayCategories = computed<NavCategory[]>(() =>
-  trimmedKeyword.value
-    ? filteredCategories.value
-    : [...personalCategories.value, ...filteredCategories.value]
+/** 已隐藏分类（按展示顺序），供页面底部恢复区使用 */
+const hiddenCategoryList = computed<NavCategory[]>(() =>
+  orderedMergedCategories.value.filter((c) => isHidden(c.name))
 )
+
+const displayCategories = computed<NavCategory[]>(() => {
+  if (trimmedKeyword.value) return filteredCategories.value
+  // 置顶分类排在普通分类之前（个人分组仍最优先），组内保持分类顺序
+  const pinned = filteredCategories.value.filter((c) => isPinned(c.name))
+  const rest = filteredCategories.value.filter((c) => !isPinned(c.name))
+  return [...personalCategories.value, ...pinned, ...rest]
+})
 
 const { canInstall, isOnline, promptInstall } = usePwa()
 const { anyEnabled: widgetsAnyEnabled } = useWidgets()
@@ -648,6 +669,10 @@ onBeforeUnmount(() => {
           :custom-icon-editable="!trimmedKeyword && isCustomOnlyCategory(category)"
           :category-sortable="isCategorySortable(category)"
           :category-dragging="draggingCategory === category.name"
+          :pinnable="!trimmedKeyword && isCategorySortable(category)"
+          :pinned="isPinned(category.name)"
+          @toggle-pin="togglePinned(category.name)"
+          @hide-category="toggleHidden(category.name)"
           @category-sort-start="onCategorySortStart(category.name)"
           @category-sort-move="onCategorySortMove(category.name, $event)"
           @reorder="onReorder(category.name, $event)"
@@ -689,6 +714,30 @@ onBeforeUnmount(() => {
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
             <NavCard v-for="(item, idx) in hotItems" :key="item.url" :item="item" :index="idx" />
           </div>
+        </div>
+      </div>
+
+      <div
+        v-if="!trimmedKeyword && hiddenCategoryList.length"
+        class="mt-2 mb-6 rounded-xl border border-dashed border-surface-200 dark:border-surface-800 px-4 py-3"
+      >
+        <p class="text-xs font-medium text-surface-400 dark:text-surface-500 flex items-center gap-1.5 mb-2">
+          <Icon icon="mdi:eye-off-outline" class="text-sm" />
+          {{ t('section.hiddenTitle', { n: hiddenCategoryList.length }) }}
+        </p>
+        <div class="flex flex-wrap gap-1.5">
+          <button
+            v-for="cat in hiddenCategoryList"
+            :key="cat.name"
+            type="button"
+            class="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs border border-surface-200 dark:border-surface-700 text-surface-500 dark:text-surface-400 hover:border-accent-400 hover:text-accent-600 dark:hover:text-accent-400 transition-colors"
+            :title="t('section.show')"
+            @click="toggleHidden(cat.name)"
+          >
+            <DynamicIcon :icon="cat.icon" class="text-xs" />
+            {{ catName(cat) }}
+            <Icon icon="mdi:eye-outline" class="text-xs" />
+          </button>
         </div>
       </div>
     </main>

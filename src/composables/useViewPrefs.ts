@@ -15,10 +15,21 @@ interface ViewPrefs {
   collapsed: string[]
   /** 分类展示顺序（分类名列表）；未列出的分类按原始顺序排在其后 */
   categoryOrder: string[]
+  /** 置顶分类（分类名列表）：排在普通分类之前，个人分组之后 */
+  pinnedCategories: string[]
+  /** 隐藏分类（分类名列表）：不出现在主列表与导航条，可在页面底部恢复 */
+  hiddenCategories: string[]
 }
 
 function load(): ViewPrefs {
-  const fallback: ViewPrefs = { view: 'grid', density: 'comfortable', collapsed: [], categoryOrder: [] }
+  const fallback: ViewPrefs = {
+    view: 'grid',
+    density: 'comfortable',
+    collapsed: [],
+    categoryOrder: [],
+    pinnedCategories: [],
+    hiddenCategories: [],
+  }
   try {
     const raw = localStorage.getItem(KEY)
     if (!raw) return fallback
@@ -33,6 +44,12 @@ function load(): ViewPrefs {
       categoryOrder: Array.isArray(p.categoryOrder)
         ? p.categoryOrder.filter((x): x is string => typeof x === 'string')
         : [],
+      pinnedCategories: Array.isArray(p.pinnedCategories)
+        ? p.pinnedCategories.filter((x): x is string => typeof x === 'string')
+        : [],
+      hiddenCategories: Array.isArray(p.hiddenCategories)
+        ? p.hiddenCategories.filter((x): x is string => typeof x === 'string')
+        : [],
     }
   } catch {
     return fallback
@@ -44,6 +61,8 @@ const view = ref<ViewMode>(initial.view)
 const density = ref<Density>(initial.density)
 const collapsed = ref<string[]>(initial.collapsed)
 const categoryOrder = ref<string[]>(initial.categoryOrder)
+const pinnedCategories = ref<string[]>(initial.pinnedCategories)
+const hiddenCategories = ref<string[]>(initial.hiddenCategories)
 
 function save() {
   try {
@@ -54,6 +73,8 @@ function save() {
         density: density.value,
         collapsed: collapsed.value,
         categoryOrder: categoryOrder.value,
+        pinnedCategories: pinnedCategories.value,
+        hiddenCategories: hiddenCategories.value,
       })
     )
   } catch {
@@ -94,16 +115,48 @@ export function useViewPrefs() {
     save()
   }
 
+  function isPinned(name: string): boolean {
+    return pinnedCategories.value.includes(name)
+  }
+
+  function togglePinned(name: string) {
+    pinnedCategories.value = pinnedCategories.value.includes(name)
+      ? pinnedCategories.value.filter((n) => n !== name)
+      : [...pinnedCategories.value, name]
+    save()
+  }
+
+  function isHidden(name: string): boolean {
+    return hiddenCategories.value.includes(name)
+  }
+
+  /** 隐藏/恢复分类；隐藏时同时取消置顶，避免恢复后位置突变 */
+  function toggleHidden(name: string) {
+    if (hiddenCategories.value.includes(name)) {
+      hiddenCategories.value = hiddenCategories.value.filter((n) => n !== name)
+    } else {
+      hiddenCategories.value = [...hiddenCategories.value, name]
+      pinnedCategories.value = pinnedCategories.value.filter((n) => n !== name)
+    }
+    save()
+  }
+
   return {
     view,
     density,
     collapsed,
     categoryOrder,
+    pinnedCategories,
+    hiddenCategories,
     setView,
     setDensity,
     isCollapsed,
     toggleCollapsed,
     setAllCollapsed,
     setCategoryOrder,
+    isPinned,
+    togglePinned,
+    isHidden,
+    toggleHidden,
   }
 }
