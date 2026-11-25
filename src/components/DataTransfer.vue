@@ -11,6 +11,15 @@ import {
 } from '../utils/dataTransfer'
 import { buildShareUrl } from '../utils/share'
 import { buildSyncCode, parseSyncCode, applySyncPayload } from '../utils/syncCode'
+import {
+  loadWebDavConfig,
+  saveWebDavConfig,
+  isWebDavConfigValid,
+  uploadSyncCodeToWebDav,
+  downloadSyncCodeFromWebDav,
+  WebDavError,
+  type WebDavConfig,
+} from '../utils/webdav'
 import { copyText } from '../utils/clipboard'
 import { useI18n } from '../i18n'
 
@@ -52,6 +61,72 @@ function onImportSync() {
   applySyncPayload(payload)
   // 偏好类 composable 都是启动时读取的单例，整表写入后刷新页面统一生效
   window.location.reload()
+}
+
+// ---- WebDAV 同步：配置只存本机（不进同步码），凭据不离开用户自己的服务器 ----
+const webdav = ref<WebDavConfig>(loadWebDavConfig())
+const webdavBusy = ref(false)
+
+function persistWebDav() {
+  saveWebDavConfig(webdav.value)
+}
+
+function webdavErrorMessage(err: unknown): string {
+  if (err instanceof WebDavError) {
+    if (err.message === 'network') return t('dt.errWebdavNetwork')
+    if (err.message === 'notfound') return t('dt.errWebdavNotFound')
+    if (err.message === 'invalid') return t('dt.errSyncInvalid')
+    return t('dt.errWebdavHttp', { status: err.status ?? '' })
+  }
+  return t('dt.errWebdavNetwork')
+}
+
+async function onWebDavUpload() {
+  persistWebDav()
+  if (!isWebDavConfigValid(webdav.value)) {
+    message.value = t('dt.errWebdavConfig')
+    isError.value = true
+    return
+  }
+  const code = buildSyncCode()
+  if (!code) {
+    message.value = t('dt.msgSyncEmpty')
+    isError.value = true
+    return
+  }
+  webdavBusy.value = true
+  try {
+    await uploadSyncCodeToWebDav(webdav.value, code)
+    message.value = t('dt.msgWebdavUploaded')
+    isError.value = false
+  } catch (err) {
+    message.value = webdavErrorMessage(err)
+    isError.value = true
+  } finally {
+    webdavBusy.value = false
+  }
+}
+
+async function onWebDavDownload() {
+  persistWebDav()
+  if (!isWebDavConfigValid(webdav.value)) {
+    message.value = t('dt.errWebdavConfig')
+    isError.value = true
+    return
+  }
+  webdavBusy.value = true
+  try {
+    syncCode.value = await downloadSyncCodeFromWebDav(webdav.value)
+    message.value = t('dt.msgWebdavDownloaded')
+    isError.value = false
+    // 拉回后复用手动导入同一确认与整表覆盖路径
+    onImportSync()
+  } catch (err) {
+    message.value = webdavErrorMessage(err)
+    isError.value = true
+  } finally {
+    webdavBusy.value = false
+  }
 }
 
 async function onShare() {
@@ -249,6 +324,57 @@ async function onFile(e: Event) {
           {{ t('dt.syncImport') }}
         </button>
         <p class="px-2 mt-1 text-[11px] text-surface-300 dark:text-surface-600">{{ t('dt.syncHint') }}</p>
+
+        <p class="px-2 mt-3 text-[11px] font-medium text-surface-500 dark:text-surface-400">{{ t('dt.webdavTitle') }}</p>
+        <input
+          v-model="webdav.url"
+          type="url"
+          :placeholder="t('dt.webdavUrlPlaceholder')"
+          :aria-label="t('dt.webdavUrl')"
+          class="w-full mt-1 px-2 py-1.5 rounded-md border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 text-[11px] text-surface-600 dark:text-surface-300"
+          @change="persistWebDav"
+        />
+        <div class="flex gap-1.5 mt-1.5">
+          <input
+            v-model="webdav.username"
+            type="text"
+            autocomplete="username"
+            :placeholder="t('dt.webdavUser')"
+            :aria-label="t('dt.webdavUser')"
+            class="flex-1 min-w-0 px-2 py-1.5 rounded-md border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 text-[11px] text-surface-600 dark:text-surface-300"
+            @change="persistWebDav"
+          />
+          <input
+            v-model="webdav.password"
+            type="password"
+            autocomplete="current-password"
+            :placeholder="t('dt.webdavPass')"
+            :aria-label="t('dt.webdavPass')"
+            class="flex-1 min-w-0 px-2 py-1.5 rounded-md border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 text-[11px] text-surface-600 dark:text-surface-300"
+            @change="persistWebDav"
+          />
+        </div>
+        <div class="flex gap-1.5 mt-1.5">
+          <button
+            type="button"
+            class="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md text-xs font-medium text-surface-600 dark:text-surface-300 hover:bg-surface-50 dark:hover:bg-surface-800 transition-colors disabled:opacity-40"
+            :disabled="webdavBusy"
+            @click="onWebDavUpload"
+          >
+            <Icon icon="mdi:cloud-upload-outline" class="text-sm" />
+            {{ t('dt.webdavUpload') }}
+          </button>
+          <button
+            type="button"
+            class="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md text-xs font-medium text-surface-600 dark:text-surface-300 hover:bg-surface-50 dark:hover:bg-surface-800 transition-colors disabled:opacity-40"
+            :disabled="webdavBusy"
+            @click="onWebDavDownload"
+          >
+            <Icon icon="mdi:cloud-download-outline" class="text-sm" />
+            {{ t('dt.webdavDownload') }}
+          </button>
+        </div>
+        <p class="px-2 mt-1 text-[11px] text-surface-300 dark:text-surface-600">{{ t('dt.webdavHint') }}</p>
       </div>
       <p
         v-if="message"
