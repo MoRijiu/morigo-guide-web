@@ -41,6 +41,7 @@ const emit = defineEmits<{
   clear: []
   edit: [payload: { categoryName: string; item: NavItem }]
   remove: [payload: { categoryName: string; item: NavItem }]
+  'context-menu': [payload: { item: NavItem; categoryName?: string; x: number; y: number }]
   'toggle-collapse': []
   reorder: [urls: string[]]
   'update-icon': [icon: string]
@@ -283,6 +284,7 @@ function copyAnchor(id: string) {
         :dragging="draggingUrl === item.url"
         @edit="emit('edit', $event)"
         @remove="emit('remove', $event)"
+        @context-menu="emit('context-menu', $event)"
         @sort-start="onSortStart"
         @sort-move="onSortMove"
       />

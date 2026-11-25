@@ -25,6 +25,7 @@ import { useWidgets } from './composables/useWidgets'
 import { parseShareHash, type SharePayload } from './utils/share'
 import { useThemePrefs } from './composables/useThemePrefs'
 import CommandPalette, { type PaletteEntry } from './components/CommandPalette.vue'
+import CardContextMenu, { type ContextMenuState } from './components/CardContextMenu.vue'
 import { usePwa } from './composables/usePwa'
 import { useI18n } from './i18n'
 
@@ -49,7 +50,7 @@ function matches(item: NavItem, k: string): boolean {
   )
 }
 
-const { customCategories, addItem, updateItem, removeItem, importCategories, setCustomOrder, setCategoryIcon } = useCustomData()
+const { customCategories, addItem, updateItem, removeItem, importCategories, setCustomOrder, setCategoryIcon, isCustomItem } = useCustomData()
 const customCategoriesRef = customCategories
 
 /**
@@ -101,7 +102,7 @@ const resultCount = computed(() =>
   filteredCategories.value.reduce((sum, cat) => sum + cat.items.length, 0)
 )
 
-const { favorites, recent, clearRecent, recordVisit, importUserData, setFavoritesOrder } = useUserData()
+const { favorites, recent, clearRecent, recordVisit, importUserData, setFavoritesOrder, isFavorite, toggleFavorite } = useUserData()
 
 // ==================== 拖拽排序 ====================
 /**
@@ -332,6 +333,70 @@ function isCustomOnlyCategory(category: NavCategory): boolean {
     customCategories.value.some((c) => c.name === category.name) &&
     !siteConfig.navigation.some((c) => c.name === category.name)
   )
+}
+
+// ==================== 卡片右键 / 长按菜单 ====================
+const contextMenu = ref<ContextMenuState | null>(null)
+
+function onCardContextMenu(payload: { item: NavItem; categoryName?: string; x: number; y: number }) {
+  contextMenu.value = {
+    item: payload.item,
+    categoryName: payload.categoryName,
+    isCustom: payload.categoryName ? isCustomItem(payload.categoryName, payload.item.url) : false,
+    favorited: isFavorite(payload.item.url),
+    x: payload.x,
+    y: payload.y,
+  }
+}
+
+const contextMoveTargets = computed(() => {
+  const state = contextMenu.value
+  if (!state?.isCustom || !state.categoryName) return []
+  return allCategoryNames.value
+    .filter((name) => name !== state.categoryName)
+    .map((name) => {
+      const cat = mergedCategories.value.find((c) => c.name === name)
+      return { name, displayName: cat ? catName(cat) : name }
+    })
+})
+
+function closeContextMenu() {
+  contextMenu.value = null
+}
+
+function onContextOpen(item: NavItem) {
+  closeContextMenu()
+  recordVisit(item.url)
+  window.open(item.url, '_blank', 'noopener')
+}
+
+async function onContextCopy(item: NavItem) {
+  closeContextMenu()
+  try {
+    await navigator.clipboard.writeText(item.url)
+  } catch {
+    // 剪贴板不可用时静默忽略
+  }
+}
+
+function onContextToggleFavorite(item: NavItem) {
+  toggleFavorite(item.url)
+  closeContextMenu()
+}
+
+function onContextEdit(payload: { categoryName: string; item: NavItem }) {
+  closeContextMenu()
+  openEditForm(payload)
+}
+
+function onContextRemove(payload: { categoryName: string; item: NavItem }) {
+  closeContextMenu()
+  onRemoveItem(payload)
+}
+
+function onContextMove(payload: { categoryName: string; item: NavItem; target: string }) {
+  updateItem(payload.categoryName, payload.item.url, payload.target, payload.item)
+  closeContextMenu()
 }
 
 function onRemoveItem(payload: { categoryName: string; item: NavItem }) {
@@ -682,6 +747,7 @@ onBeforeUnmount(() => {
           @clear="clearRecent"
           @edit="openEditForm"
           @remove="onRemoveItem"
+          @context-menu="onCardContextMenu"
         />
       </template>
 
@@ -713,7 +779,7 @@ onBeforeUnmount(() => {
             {{ t('empty.hot') }}
           </p>
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-            <NavCard v-for="(item, idx) in hotItems" :key="item.url" :item="item" :index="idx" />
+            <NavCard v-for="(item, idx) in hotItems" :key="item.url" :item="item" :index="idx" @context-menu="onCardContextMenu" />
           </div>
         </div>
       </div>
@@ -792,5 +858,16 @@ onBeforeUnmount(() => {
       @close="formOpen = false"
     />
     <ShareImportModal :payload="sharePayload" @import="onShareImport" @close="clearShareHash" />
+    <CardContextMenu
+      :state="contextMenu"
+      :move-targets="contextMoveTargets"
+      @close="closeContextMenu"
+      @open="onContextOpen"
+      @copy="onContextCopy"
+      @toggle-favorite="onContextToggleFavorite"
+      @edit="onContextEdit"
+      @remove="onContextRemove"
+      @move="onContextMove"
+    />
   </div>
 </template>
