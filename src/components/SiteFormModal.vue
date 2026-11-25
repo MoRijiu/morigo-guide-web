@@ -176,6 +176,7 @@ function onSubmit() {
             placeholder="mdi:web"
             class="mt-1 w-full px-3 py-2 text-sm rounded-lg border border-surface-200 dark:border-surface-700 bg-transparent text-surface-800 dark:text-surface-100 placeholder:text-surface-300 dark:placeholder:text-surface-600 outline-none focus:border-accent-400"
           />
+          <span class="block mt-1 text-[11px] leading-snug text-surface-400 dark:text-surface-500">{{ t('form.iconHint') }}</span>
         </label>
       </div>
 

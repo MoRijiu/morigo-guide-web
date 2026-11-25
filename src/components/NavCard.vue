@@ -9,6 +9,7 @@ import { copyText } from '../utils/clipboard'
 import { useUserData } from '../composables/useUserData'
 import { siteHealth, daysSince } from '../utils/siteHealth'
 import { useCustomData } from '../composables/useCustomData'
+import { useFavicon } from '../composables/useFavicon'
 import type { NavItem } from '../types'
 import { useI18n } from '../i18n'
 
@@ -129,6 +130,19 @@ const healthTitle = computed(() => {
   return health.value === 'never' ? t('card.neverTitle') : ''
 })
 const { isCustomItem } = useCustomData()
+// 未指定图标的条目（占位 mdi:web，来自自定义/导入/书签）自动探测站点 favicon，成功才替换
+const { resolvedFavicon, ensureFavicon } = useFavicon()
+const displayIcon = computed(() => {
+  if (props.item.icon !== 'mdi:web') return props.item.icon
+  return resolvedFavicon(props.item.url) ?? props.item.icon
+})
+watch(
+  () => [props.item.icon, props.item.url] as const,
+  ([icon, url]) => {
+    if (icon === 'mdi:web') ensureFavicon(url)
+  },
+  { immediate: true }
+)
 /** 显示拖拽手柄：可排序，或可跨分类拖拽且本条目是自定义站点 */
 const showHandle = computed(
   () => Boolean(props.sortable) || Boolean(props.crossDraggable && isCustom.value)
@@ -225,7 +239,7 @@ async function onCopyLink(e: Event) {
       <Icon icon="mdi:drag-vertical" class="text-base block" />
     </span>
     <div :class="['rounded-md flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-105', tint.bg, density === 'compact' ? 'w-8 h-8' : 'w-9 h-9']">
-      <DynamicIcon :icon="item.icon" :class="(density === 'compact' ? 'text-base ' : 'text-lg ') + tint.text" />
+      <DynamicIcon :icon="displayIcon" :class="(density === 'compact' ? 'text-base ' : 'text-lg ') + tint.text" />
     </div>
     <div class="min-w-0 flex-1">
       <div class="flex items-center gap-1.5 min-w-0">
